@@ -1,1 +1,1 @@
-{"threshold": 3, "minLines": 8, "ignore": ["node_modules/**", "coverage/**", "drizzle/**", "openapi.json", "package-lock.json", "harness/office/**"], "reporters": ["console"]}
+{"threshold": 3, "minLines": 8, "format": ["typescript"], "ignore": ["**/.git/**", "node_modules/**", "coverage/**", "drizzle/**", "openapi.json", "package-lock.json", "harness/**"], "reporters": ["console"]}
