@@ -78,7 +78,7 @@ export async function getBookmark(userId: string, id: string) {
 const MICROS = sql<string>`to_char(${bookmarks.createdAt} at time zone 'utc', 'YYYY-MM-DD"T"HH24:MI:SS.US"Z"')`;
 
 // Newest first. next_cursor is set only when more rows exist beyond this page.
-export async function listBookmarks(userId: string, limit: number, cursor: Cursor | null, status?: "read" | "unread", tag?: string) {
+export async function listBookmarks(userId: string, limit: number, cursor: Cursor | null, status?: "read" | "unread", tag?: string, q?: string) {
   const rows = await db
     .select({ row: bookmarks, micros: MICROS })
     .from(bookmarks)
@@ -94,6 +94,7 @@ export async function listBookmarks(userId: string, limit: number, cursor: Curso
                 .where(and(eq(bookmarkTags.bookmarkId, bookmarks.id), eq(bookmarkTags.userId, userId), eq(bookmarkTags.name, tag))),
             )
           : undefined,
+        q ? sql`${bookmarks.search} @@ plainto_tsquery('simple', ${q})` : undefined,
         cursor ? sql`(${bookmarks.createdAt}, ${bookmarks.id}) < (${cursor.c}::timestamptz, ${cursor.i}::uuid)` : undefined,
       ),
     )
