@@ -104,3 +104,14 @@ export async function deleteBookmark(userId: string, id: string) {
     .returning({ id: bookmarks.id });
   return rows.length > 0;
 }
+
+// Sets read_at once (keeps the first time on repeats). Returns null when the id is not a uuid or the bookmark is not the user's.
+export async function markBookmarkRead(userId: string, id: string) {
+  if (!UUID.test(id)) return null;
+  const [row] = await db
+    .update(bookmarks)
+    .set({ readAt: sql`coalesce(${bookmarks.readAt}, clock_timestamp())` as unknown as Date, updatedAt: sql`clock_timestamp()` as unknown as Date })
+    .where(and(eq(bookmarks.id, id), eq(bookmarks.userId, userId)))
+    .returning();
+  return row ? toBookmark(row) : null;
+}
