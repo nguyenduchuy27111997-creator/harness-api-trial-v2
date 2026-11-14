@@ -1,6 +1,6 @@
 import { createRoute, OpenAPIHono, z } from "@hono/zod-openapi";
 import { requireAuth } from "../lib/auth.js";
-import { createBookmark, getBookmark, listBookmarks } from "../lib/bookmarks.js";
+import { createBookmark, findBookmarkIdByUrl, getBookmark, listBookmarks } from "../lib/bookmarks.js";
 import { decodeCursor, LimitSchema } from "../lib/pagination.js";
 import { apiError, ErrorSchema, requireJson, validationHook } from "../lib/errors.js";
 
@@ -88,8 +88,13 @@ const listRouteDef = createRoute({
 export const bookmarks = new OpenAPIHono<{ Variables: { userId: string; tokenId: string } }>({
   defaultHook: validationHook,
 }).openapi(createRouteDef, async (c) => {
-  const created = await createBookmark(c.var.userId, c.req.valid("json"));
-  if (!created) return apiError(c, 409, "duplicate_url", "You already saved this url");
+  const body = c.req.valid("json");
+  const created = await createBookmark(c.var.userId, body);
+  if (!created) {
+    const existingId = await findBookmarkIdByUrl(c.var.userId, body.url);
+    if (!existingId) return apiError(c, 500, "internal_error", "Internal server error");
+    return apiError(c, 409, "duplicate_url", "You already saved this url", { existing_id: existingId });
+  }
   return c.json(created, 201);
 }).openapi(getRouteDef, async (c) => {
   const found = await getBookmark(c.var.userId, c.req.valid("param").id);
