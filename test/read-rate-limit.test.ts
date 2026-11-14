@@ -8,10 +8,12 @@ afterAll(() => sql.end());
 
 type Err = { error: { code: string; message: string } };
 
-// The window is a fixed clock minute, so start the 301 reads early in a minute.
+// The window is a fixed 60 s epoch-aligned window on the Postgres clock (docs/design/M2.md),
+// so start the 301 reads with at least 20 s left in it.
 async function startOfMinute() {
-  const s = new Date().getSeconds();
-  if (s >= 50) await new Promise((r) => setTimeout(r, (61 - s) * 1000));
+  const [row] = await sql<{ epoch: string }[]>`select extract(epoch from now()) as epoch`;
+  const remaining = 60 - (Number(row!.epoch) % 60);
+  if (remaining < 20) await new Promise((r) => setTimeout(r, (remaining + 0.5) * 1000));
 }
 
 test("the 301st GET in a minute is 429 per token; another token and /openapi.json are not limited", async () => {
