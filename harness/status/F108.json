@@ -1,0 +1,4 @@
+{
+  "status": "passing",
+  "notes": "No product change: F107's requireAuth already counts GETs as read:<tokenId> with RATE_LIMIT_READ_PER_MIN (300) per 60 s window; /openapi.json is outside requireAuth. test/read-rate-limit.test.ts's window guard now reads the Postgres clock (select extract(epoch from now()) via sql) and waits until at least 20 s remain in the 60 s window, per docs/design/M2.md."
+}
