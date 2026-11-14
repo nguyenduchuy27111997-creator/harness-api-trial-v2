@@ -1,6 +1,6 @@
-import { and, eq, sql } from "drizzle-orm";
+import { and, asc, eq, inArray, sql } from "drizzle-orm";
 import { db } from "../db/client.js";
-import { bookmarks } from "../db/schema.js";
+import { bookmarks, bookmarkTags } from "../db/schema.js";
 import { encodeCursor, type Cursor } from "./pagination.js";
 
 type Row = typeof bookmarks.$inferSelect;
@@ -26,6 +26,23 @@ const toBookmark = (b: Row): Bookmark => ({
   created_at: b.createdAt.toISOString(),
   updated_at: b.updatedAt.toISOString(),
 });
+
+// Fills `tags` (sorted by name) for a set of bookmarks with one query.
+async function withTags(userId: string, items: Bookmark[]) {
+  if (items.length === 0) return items;
+  const rows = await db
+    .select({ id: bookmarkTags.bookmarkId, name: bookmarkTags.name })
+    .from(bookmarkTags)
+    .where(and(eq(bookmarkTags.userId, userId), inArray(bookmarkTags.bookmarkId, items.map((b) => b.id))))
+    .orderBy(asc(bookmarkTags.name));
+  for (const r of rows) items.find((b) => b.id === r.id)?.tags.push(r.name);
+  return items;
+}
+
+export async function getBookmarkWithTags(userId: string, id: string) {
+  const b = await getBookmark(userId, id);
+  return b ? (await withTags(userId, [b]))[0]! : null;
+}
 
 // url and title are expected already trimmed. Returns null when the user already saved this url.
 export async function createBookmark(userId: string, input: { url: string; title?: string; note?: string | null }) {
@@ -76,7 +93,7 @@ export async function listBookmarks(userId: string, limit: number, cursor: Curso
   const page = rows.slice(0, limit);
   const last = page[page.length - 1];
   return {
-    items: page.map((r) => toBookmark(r.row)),
+    items: await withTags(userId, page.map((r) => toBookmark(r.row))),
     next_cursor: rows.length > limit && last ? encodeCursor({ c: last.micros, i: last.row.id }) : null,
   };
 }
@@ -92,7 +109,7 @@ export async function updateBookmark(userId: string, id: string, patch: { title?
     .set(set)
     .where(and(eq(bookmarks.id, id), eq(bookmarks.userId, userId)))
     .returning();
-  return row ? toBookmark(row) : null;
+  return row ? (await withTags(userId, [toBookmark(row)]))[0]! : null;
 }
 
 // Returns false when the id is not a uuid or the bookmark is not the user's.
@@ -113,7 +130,7 @@ export async function markBookmarkRead(userId: string, id: string) {
     .set({ readAt: sql`coalesce(${bookmarks.readAt}, clock_timestamp())` as unknown as Date, updatedAt: sql`clock_timestamp()` as unknown as Date })
     .where(and(eq(bookmarks.id, id), eq(bookmarks.userId, userId)))
     .returning();
-  return row ? toBookmark(row) : null;
+  return row ? (await withTags(userId, [toBookmark(row)]))[0]! : null;
 }
 
 // Clears read_at (a no-op on an unread bookmark). Returns null when the id is not a uuid or the bookmark is not the user's.
@@ -124,5 +141,5 @@ export async function markBookmarkUnread(userId: string, id: string) {
     .set({ readAt: null, updatedAt: sql`clock_timestamp()` as unknown as Date })
     .where(and(eq(bookmarks.id, id), eq(bookmarks.userId, userId)))
     .returning();
-  return row ? toBookmark(row) : null;
+  return row ? (await withTags(userId, [toBookmark(row)]))[0]! : null;
 }
