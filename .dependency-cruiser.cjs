@@ -16,6 +16,11 @@ module.exports = {
       from: { path: "^src/routes/" }, to: { path: "^src/routes/" } },
     { name: "db-only-env", severity: "error", comment: "src/db imports nothing from src/lib except env.",
       from: { path: "^src/db/" }, to: { path: "^src/lib/", pathNot: "^src/lib/env\\.ts$" } },
+    // M2 (docs/design/M2.md, Modules):
+    { name: "bookmarks-not-tags", severity: "error", comment: "lib/tags imports lib/bookmarks, never the other way.",
+      from: { path: "^src/lib/bookmarks\\.ts$" }, to: { path: "^src/lib/tags\\.ts$" } },
+    { name: "rate-limit-not-auth", severity: "error", comment: "lib/auth calls lib/rate-limit, never the other way.",
+      from: { path: "^src/lib/rate-limit\\.ts$" }, to: { path: "^src/lib/auth\\.ts$" } },
   ],
   options: {
     doNotFollow: { path: "node_modules" },
