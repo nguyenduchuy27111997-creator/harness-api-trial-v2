@@ -1,0 +1,4 @@
+{
+  "status": "passing",
+  "notes": "POST /auth/sign-out (requireAuth) sets revoked_at on the token used only (lib/auth.ts revokeToken). 204 empty body."
+}
