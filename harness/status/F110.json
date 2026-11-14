@@ -1,4 +1,0 @@
-{
-  "status": "passing",
-  "notes": "perf.ts seeds 1,000 bookmarks tagged alpha/beta/gamma in blocks of three (each tag has read and unread), 'perfword' in even notes; perf.config.json has 4 new routes at p99 150. GET /bookmarks?tag=alpha p99 sometimes ~100 ms under heavy machine load; smallest headroom."
-}
