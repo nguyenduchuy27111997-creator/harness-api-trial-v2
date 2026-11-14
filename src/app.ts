@@ -4,6 +4,7 @@ import { auth } from "./routes/auth.js";
 import { bookmarks } from "./routes/bookmarks.js";
 import { health } from "./routes/health.js";
 import { me } from "./routes/me.js";
+import { tags } from "./routes/tags.js";
 
 // Every route is declared with createRoute and zod schemas, so the contract
 // (openapi.json, served at /openapi.json) is generated from the code.
@@ -12,6 +13,7 @@ app.route("/", health);
 app.route("/", auth);
 app.route("/", me);
 app.route("/", bookmarks);
+app.route("/", tags);
 app.openAPIRegistry.registerComponent("securitySchemes", "bearerAuth", { type: "http", scheme: "bearer" });
 app.onError(onError);
 app.notFound((c) => apiError(c, 404, "not_found", "Route not found"));

@@ -1,6 +1,6 @@
 import { createRoute, OpenAPIHono, z } from "@hono/zod-openapi";
 import { requireAuth } from "../lib/auth.js";
-import { createBookmark, deleteBookmark, findBookmarkIdByUrl, getBookmark, listBookmarks, updateBookmark } from "../lib/bookmarks.js";
+import { createBookmark, deleteBookmark, findBookmarkIdByUrl, getBookmarkWithTags, listBookmarks, updateBookmark } from "../lib/bookmarks.js";
 import { decodeCursor, LimitSchema } from "../lib/pagination.js";
 import { apiError, ErrorSchema, requireJson, validationHook } from "../lib/errors.js";
 
@@ -134,7 +134,7 @@ export const bookmarks = new OpenAPIHono<{ Variables: { userId: string; tokenId:
   }
   return c.json(created, 201);
 }).openapi(getRouteDef, async (c) => {
-  const found = await getBookmark(c.var.userId, c.req.valid("param").id);
+  const found = await getBookmarkWithTags(c.var.userId, c.req.valid("param").id);
   if (!found) return apiError(c, 404, "not_found", "Bookmark not found");
   return c.json(found, 200);
 }).openapi(listRouteDef, async (c) => {
