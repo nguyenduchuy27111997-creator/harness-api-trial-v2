@@ -1,5 +1,5 @@
 import { OpenAPIHono } from "@hono/zod-openapi";
-import { onError } from "./lib/errors.js";
+import { apiError, onError } from "./lib/errors.js";
 import { auth } from "./routes/auth.js";
 import { bookmarks } from "./routes/bookmarks.js";
 import { health } from "./routes/health.js";
@@ -14,6 +14,7 @@ app.route("/", me);
 app.route("/", bookmarks);
 app.openAPIRegistry.registerComponent("securitySchemes", "bearerAuth", { type: "http", scheme: "bearer" });
 app.onError(onError);
+app.notFound((c) => apiError(c, 404, "not_found", "Route not found"));
 
 export const openapi = () =>
   app.getOpenAPI31Document({ openapi: "3.1.0", info: { title: "marklist", version: "0.1.0" } });

@@ -1,0 +1,4 @@
+{
+  "status": "passing",
+  "notes": "app.notFound returns 404 {error:{code:not_found,message}} via apiError (src/app.ts). /openapi.json needs no token."
+}
