@@ -1,0 +1,1 @@
+{"status": "passing", "notes": "q query param on GET /bookmarks: trimmed, empty = absent, search @@ plainto_tsquery('simple', q) on the generated search column; composes with tag, status, cursor, limit. Whole-word matching only."}
