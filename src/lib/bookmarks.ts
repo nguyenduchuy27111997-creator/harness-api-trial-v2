@@ -115,3 +115,14 @@ export async function markBookmarkRead(userId: string, id: string) {
     .returning();
   return row ? toBookmark(row) : null;
 }
+
+// Clears read_at (a no-op on an unread bookmark). Returns null when the id is not a uuid or the bookmark is not the user's.
+export async function markBookmarkUnread(userId: string, id: string) {
+  if (!UUID.test(id)) return null;
+  const [row] = await db
+    .update(bookmarks)
+    .set({ readAt: null, updatedAt: sql`clock_timestamp()` as unknown as Date })
+    .where(and(eq(bookmarks.id, id), eq(bookmarks.userId, userId)))
+    .returning();
+  return row ? toBookmark(row) : null;
+}
