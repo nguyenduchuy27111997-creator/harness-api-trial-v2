@@ -1,0 +1,1 @@
+{"status":"passing","notes":"GET /bookmarks?status=read|unread filters on read_at; other values give 400 validation_error naming status."}
