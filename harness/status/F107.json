@@ -1,0 +1,4 @@
+{
+  "status": "passing",
+  "notes": "lib/rate-limit.hit (one Postgres statement, fixed window) + check in requireAuth (GET read:<tokenId>, other methods write:<tokenId>, 60 s windows); 429 rate_limited with Retry-After; rateLimitedResponse added to M1 protected routes; openapi.json regenerated (source .env.test first). The test-writer's test/write-rate-limit.test.ts reads the Node clock and starts the burst below second 45, not the Postgres clock with 20 s left as docs/design/M2.md asks; not blocking. No PUT/PATCH/DELETE routes exist yet, so only POST writes are covered."
+}

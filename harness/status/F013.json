@@ -1,0 +1,1 @@
+{"status":"passing","notes":"DELETE /bookmarks/{id}/read clears read_at and bumps updated_at; 404 for non-uuid or other user's id."}
