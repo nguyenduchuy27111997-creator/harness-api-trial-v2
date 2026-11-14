@@ -1,0 +1,1 @@
+{"status": "passing", "notes": "PATCH /bookmarks/{id} updates title and note only; verifier PASS."}

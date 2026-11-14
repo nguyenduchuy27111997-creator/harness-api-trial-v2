@@ -1,4 +1,4 @@
-import { and, eq } from "drizzle-orm";
+import { and, eq, sql } from "drizzle-orm";
 import { db } from "../db/client.js";
 import { bookmarks } from "../db/schema.js";
 
@@ -45,5 +45,19 @@ export async function getBookmark(userId: string, id: string) {
     .select()
     .from(bookmarks)
     .where(and(eq(bookmarks.id, id), eq(bookmarks.userId, userId)));
+  return row ? toBookmark(row) : null;
+}
+
+// Returns null when the id is not a uuid or the bookmark is not the user's. Only title and note can change.
+export async function updateBookmark(userId: string, id: string, patch: { title?: string; note?: string | null }) {
+  if (!UUID.test(id)) return null;
+  const set: Partial<typeof bookmarks.$inferInsert> = { updatedAt: sql`clock_timestamp()` as unknown as Date };
+  if (patch.title !== undefined) set.title = patch.title;
+  if (patch.note !== undefined) set.note = patch.note;
+  const [row] = await db
+    .update(bookmarks)
+    .set(set)
+    .where(and(eq(bookmarks.id, id), eq(bookmarks.userId, userId)))
+    .returning();
   return row ? toBookmark(row) : null;
 }
