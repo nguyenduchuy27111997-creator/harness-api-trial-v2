@@ -1,1 +1,1 @@
-- [DB access via docker](reference_db_access.md) — no host psql; use docker exec on harness-pg-<id>; probe non-JSON Content-Type; zsh no word-split for curl args
+- [DB access via docker](reference_db_access.md) — no host psql; use docker exec on harness-pg-<id>; probe non-JSON Content-Type; zsh no word-split; sign-up path; unsigned cursors
