@@ -1,6 +1,6 @@
 import { createRoute, OpenAPIHono, z } from "@hono/zod-openapi";
 import { requireAuth } from "../lib/auth.js";
-import { createBookmark, deleteBookmark, findBookmarkIdByUrl, getBookmark, listBookmarks, markBookmarkRead, updateBookmark } from "../lib/bookmarks.js";
+import { createBookmark, deleteBookmark, findBookmarkIdByUrl, getBookmark, listBookmarks, markBookmarkRead, markBookmarkUnread, updateBookmark } from "../lib/bookmarks.js";
 import { decodeCursor, LimitSchema } from "../lib/pagination.js";
 import { apiError, ErrorSchema, requireJson, validationHook } from "../lib/errors.js";
 import { rateLimitedResponse } from "../lib/rate-limit.js";
@@ -140,6 +140,20 @@ const readRouteDef = createRoute({
   },
 });
 
+const unreadRouteDef = createRoute({
+  method: "delete",
+  path: "/bookmarks/{id}/read",
+  security: [{ bearerAuth: [] }],
+  middleware: [requireAuth],
+  request: { params: z.object({ id: z.string() }) },
+  responses: {
+    200: { description: "The bookmark, marked unread", content: { "application/json": { schema: BookmarkSchema } } },
+    401: err("Missing or invalid token"),
+    404: err("Not found"),
+    500: err("Unexpected error"),
+  },
+});
+
 export const bookmarks = new OpenAPIHono<{ Variables: { userId: string; tokenId: string } }>({
   defaultHook: validationHook,
 }).openapi(createRouteDef, async (c) => {
@@ -169,6 +183,10 @@ export const bookmarks = new OpenAPIHono<{ Variables: { userId: string; tokenId:
   return c.body(null, 204);
 }).openapi(readRouteDef, async (c) => {
   const marked = await markBookmarkRead(c.var.userId, c.req.valid("param").id);
+  if (!marked) return apiError(c, 404, "not_found", "Bookmark not found");
+  return c.json(marked, 200);
+}).openapi(unreadRouteDef, async (c) => {
+  const marked = await markBookmarkUnread(c.var.userId, c.req.valid("param").id);
   if (!marked) return apiError(c, 404, "not_found", "Bookmark not found");
   return c.json(marked, 200);
 });
