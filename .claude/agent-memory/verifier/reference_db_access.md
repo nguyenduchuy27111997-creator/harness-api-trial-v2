@@ -15,4 +15,6 @@ Routes: sign-up is `POST /auth/sign-up` (hyphen; `/auth/signup` is 404). Cursors
 
 Mark read is `PUT /bookmarks/{id}/read` (unread = DELETE); POST returns 404 route-not-found, so callers who say "POST read" mean PUT (seen F101, 2026-11-14). List the real routes with GET /openapi.json first. Lane apps may not be running: start ./init.sh in background and poll /health.
 
+Perf budget FAIL demo without editing repo files: `rsync -a --exclude node_modules --exclude .git` the tree into the scratchpad, symlink node_modules, lower one p99 in the copy's perf.config.json, run `npm run perf` there (exit 1, FAIL line). perf.ts imports the config statically, with no override flag (F110, 2026-11-14). A full `npm run perf` takes ~1 min.
+
 Rate-limit bursts (F107-F109): read the Postgres clock with `docker exec <container> psql -U postgres -At -c "select extract(epoch from now())"` and wait until >=25 s remain in the 60 s window; a node fetch loop does 300 GETs in ~1.4 s locally, so one window is easy (seen F108, 2026-11-14).

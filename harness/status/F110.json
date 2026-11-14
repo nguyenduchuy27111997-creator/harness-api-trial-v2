@@ -1,0 +1,4 @@
+{
+  "status": "passing",
+  "notes": "Added tag/search/tags routes to perf. Fixed the slow tag filter: the exists subquery had t.user_id, so with fresh stats the planner nested-looped over the user's tag rows; it now probes bookmark_tags_pk (bookmark_id, name). tag=alpha p99 ~99 ms -> ~25-33 ms. No tags table or migration (docs/decisions/0006), design M2 updated with architect PASS."
+}
