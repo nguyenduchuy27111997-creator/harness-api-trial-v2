@@ -86,12 +86,13 @@ export async function listBookmarks(userId: string, limit: number, cursor: Curso
       and(
         eq(bookmarks.userId, userId),
         status === "read" ? isNotNull(bookmarks.readAt) : status === "unread" ? isNull(bookmarks.readAt) : undefined,
+        // No user_id here: bookmarks.user_id already scopes it and the composite FK gives a tag row its bookmark's owner. Probing bookmark_tags_pk (bookmark_id, name) per bookmark keeps the plan cheap even with stale stats (a user_id condition let the planner pick a nested loop over the user's whole tag set).
         tag
           ? exists(
               db
                 .select({ one: sql`1` })
                 .from(bookmarkTags)
-                .where(and(eq(bookmarkTags.bookmarkId, bookmarks.id), eq(bookmarkTags.userId, userId), eq(bookmarkTags.name, tag))),
+                .where(and(eq(bookmarkTags.bookmarkId, bookmarks.id), eq(bookmarkTags.name, tag))),
             )
           : undefined,
         q ? sql`${bookmarks.search} @@ plainto_tsquery('simple', ${q})` : undefined,
