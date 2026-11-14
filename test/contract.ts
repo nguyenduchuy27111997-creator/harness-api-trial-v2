@@ -12,11 +12,19 @@ type Method = "get" | "post" | "put" | "patch" | "delete";
 type Responses = Record<string, { content?: Record<string, unknown> }>;
 const paths = doc.paths as Record<string, Partial<Record<Method, { responses?: Responses }>>>;
 
-export async function call(method: Method, path: string, opts: { params?: Record<string, string>; body?: unknown } = {}) {
-  const url = path.replace(/\{(\w+)\}/g, (_, k: string) => encodeURIComponent(opts.params?.[k] ?? ""));
+// `token` sends `Authorization: Bearer <token>`; `query` and `headers` are added as given.
+export async function call(method: Method, path: string, opts: {
+  params?: Record<string, string>; query?: Record<string, string>; body?: unknown; token?: string; headers?: Record<string, string>;
+} = {}) {
+  const url = path.replace(/\{(\w+)\}/g, (_, k: string) => encodeURIComponent(opts.params?.[k] ?? ""))
+    + (opts.query ? `?${new URLSearchParams(opts.query)}` : "");
   const res = await app.request(url, {
     method: method.toUpperCase(),
-    headers: opts.body === undefined ? {} : { "content-type": "application/json" },
+    headers: {
+      ...(opts.body === undefined ? {} : { "content-type": "application/json" }),
+      ...(opts.token ? { authorization: `Bearer ${opts.token}` } : {}),
+      ...opts.headers,
+    },
     body: opts.body === undefined ? undefined : JSON.stringify(opts.body),
   });
   const body = res.headers.get("content-type")?.includes("json") ? await res.json() : await res.text();
@@ -27,5 +35,5 @@ export async function call(method: Method, path: string, opts: { params?: Record
     const validate = ajv.getSchema(`openapi.json#${pointer}/content/application~1json/schema`)!;
     expect(validate(body), JSON.stringify(validate.errors)).toBe(true);
   }
-  return { status: res.status, body };
+  return { status: res.status, body, headers: res.headers };
 }

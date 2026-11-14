@@ -1,5 +1,5 @@
 {
-  "version": "5.45.0",
+  "version": "5.45.2",
   "preset": "hono-postgres",
   "files": {
     ".claude/agents/advisor.md": "e7a83e9817e031dfa49a2671940111ea252614b123ef8c48dc15cd3aac0b2c52",
@@ -43,7 +43,7 @@
     "docs/plans/.gitkeep": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
     "docs/product/spec.md": "0b399f6fcf558caa6b789df20cd62296d7d2f9011e6bf6398109872e240b72cb",
     "drizzle.config.ts": "3ce7d9c261ed681b21cee44dfe621d49c6964f3d42ec9ec1bd643027259fa7d4",
-    "eslint.config.mjs": "fd2d7892484df415882a83119b0ae814e968d67b45b528a49d004b28435488d8",
+    "eslint.config.mjs": "cc0fcc42f39fc44fbda71628c968ecde705637b79336ae5e6f3074023987bfda",
     "harness/PRESET.md": "13cead68fcc6819d47b0d9dfc226233021121bf4f7804c76904efe8c19e25000",
     "harness/agents.py": "35f04f01e9ff26a5e2dcf84cf0617fca2da69b6258c52ad2354f58a519de7c91",
     "harness/ask.py": "c87c29c6b7a9e3e84798315053e94f3e541005dfca46c67586e1fb82b2aa57e5",
@@ -218,14 +218,14 @@
     "harness/validate_backlog.py": "c74463e1f2526854845a3fbc3ff80f6d3f917e192482832b6532a3ca97741d38",
     "harness/watch.py": "a0e105daa1e94fb2d73e6d5d48cd4755061c9e95db48ac78fd9164faccc391b7",
     "init.sh": "8fa14fdc838f768dc90e453d3a148fa2b521314965d129356f10201f6ffc329f",
-    "package.json": "a6ab1881e3b91683deb18bf8feff1b49f6e70c39f6f92b058252f3dce43094f2",
+    "package.json": "83c9551a6c75279e88b2262c36cd08e2f0bd1737c96c8cda354682762c14d0b3",
     "perf.config.json": "b4699395a646959dbe8afbaf82a606dd1225d11a01e5ca04283675800c260da3",
     "scripts/check.sh": "d3c43da5c1ad0a85759b1bedb3d3c766624327afaeadcb9892e4308d372d8cb7",
     "scripts/db-up.sh": "9402218206d51d1f7f5ac455641eec91eea647ae679ccdd1a89e988341641b86",
     "scripts/drift.sh": "c18b33729f99a41d5801a40f59f2597f15332eeb86425e3be46c3096d7fa2300",
     "scripts/migration-lint.py": "d91292dc109b7621c1efc6ae5547fc98b3a8f32898bb44381b6a2203a8e47d61",
     "scripts/openapi.ts": "55954169a6fca77567b1fb62b3d514697020490eeec32ad42f12fa338fd0812a",
-    "scripts/perf.ts": "41bda11777506d7b6a46b9a1c8b18eb63ecce917701a7807c2804e56149d5766",
+    "scripts/perf.ts": "6b200cea20568ded9a8198cf20dd173cab8a6c7cdf0bff99a76ed720821ba1ef",
     "scripts/preset-setup.sh": "87da12ae70db9d5484f503c437015660c69094705fc0901b423d1d866a803e65",
     "scripts/sast.sh": "17ce1d42da3351df557106b14fa057614b4aa4d430bf407f6d6d889a231fd232",
     "src/app.ts": "aea91fb829592a90ce590d1aad8876e106a234b1f7babf621ffbd37c3885c6ec",
@@ -234,11 +234,12 @@
     "src/lib/env.ts": "1018a2efa537295c159a4b2ee582c238a438179185b9f271d0e0715d661b85cc",
     "src/routes/health.ts": "f96b59618bcd8aa4fef81c1fa73f042fef76cc08dd021996b3aed11c89a22603",
     "src/server.ts": "ca7fe364d9d38c076b20ec32e4140168300294d6ef5e5b088b7259ac15f67018",
-    "test/contract.ts": "36d3dd23e66c7429475e62b2f8fad5e162a8d843840843e06a10bbd166e3ecdb",
+    "test/contract.ts": "03013ee9f8f2b619b149185badb27550489b3abe0cb157c4d1bc288da4cc9c0a",
     "test/db.test.ts": "14ccfcd75edb5ce62311519d29ef141ca15b163a530c7e7e5083c79fe20d3870",
     "test/health.test.ts": "5b03170dd4a24036bf0946d0fddaafe1a95eec3540d50445bf3f709da440614b",
     "test/openapi.test.ts": "b413bdd07ba7ef9d6b66a829dd113910973d5b028192bd1e8802a95648144e6b",
+    "test/test-size.test.ts": "21d2e0a58e9351b748093eaa4f636883f1f7e137c497a4aeee7b761589783936",
     "tsconfig.json": "473f48ad576653f3587b3d9073ee01969e2c96c6dae3d722fa96be3ec035c737",
-    "vitest.config.ts": "394a8c3fc8d5dfd8e8fd71ccbc3dd364c8fd77d2963cf164017cfff7f807ccc7"
+    "vitest.config.ts": "5cecd37aca721b74be56025d532d175bb9fcfef433a34e6fcdfd7965355736f2"
   }
 }
