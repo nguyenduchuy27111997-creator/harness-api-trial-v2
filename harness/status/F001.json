@@ -1,0 +1,4 @@
+{
+  "status": "passing",
+  "notes": "signUp now inserts user and token in one db.transaction (review fix: a failed token insert left a user with no token). POST /auth/sign-up built (lib/errors, lib/auth, routes/auth, app wiring, openapi.json). Added requireJson route middleware: a body without a JSON content-type was a 500 and is now 400 validation_error (own test: test/sign-up-content-type.test.ts). Cosmetic: a body of [] or null gives a message starting with an empty field name (': Invalid input...'); still 400 validation_error. Environment: the stale users table and drizzle schema in the `postgres` db of container harness-pg-f001 were dropped on 2026-11-14 (pg_dump taken first); check.sh now passes with its default DB."
+}
