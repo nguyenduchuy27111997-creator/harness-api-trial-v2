@@ -12,3 +12,5 @@ Also worth probing on every API endpoint: requests sent with no or non-JSON Cont
 Shell gotcha (zsh): `J='-H content-type:application/json'; curl $J` does NOT word-split, so the header gets dropped and the app returns an empty-body 400. Write the header inline or use a shell function, e.g. `p(){ curl -s -H 'Content-Type: application/json' -d "$1" $B/$2; }` (seen 2026-11-14 on F002).
 
 Routes: sign-up is `POST /auth/sign-up` (hyphen; `/auth/signup` is 404). Cursors are unsigned base64url `{c,i}` by design (ADR 0003): a mutated cursor that still decodes to a valid timestamp+UUID returns 200, which is expected, not a bug (seen F009, 2026-11-14). Node's lenient base64url also accepts one extra trailing char.
+
+Mark read is `PUT /bookmarks/{id}/read` (unread = DELETE); POST returns 404 route-not-found, so callers who say "POST read" mean PUT (seen F101, 2026-11-14). List the real routes with GET /openapi.json first. Lane apps may not be running: start ./init.sh in background and poll /health.
