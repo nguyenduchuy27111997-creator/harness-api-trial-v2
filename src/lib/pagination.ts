@@ -19,7 +19,11 @@ export const encodeCursor = (c: Cursor) => Buffer.from(JSON.stringify({ c: c.c, 
 export function decodeCursor(text: string): Cursor | null {
   try {
     const parsed = CursorShape.strict().safeParse(JSON.parse(Buffer.from(text, "base64url").toString("utf8")));
-    if (!parsed.success || Number.isNaN(Date.parse(parsed.data.c.replace(/\d{3}Z$/, "Z")))) return null;
+    if (!parsed.success) return null;
+    // Date.parse accepts impossible dates (2024-02-31), so require an exact round-trip.
+    const ms = parsed.data.c.slice(0, 23);
+    const d = new Date(`${ms}Z`);
+    if (Number.isNaN(d.getTime()) || d.toISOString() !== `${ms}Z`) return null;
     return parsed.data;
   } catch {
     return null;

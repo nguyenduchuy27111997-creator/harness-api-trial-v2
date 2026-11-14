@@ -1,1 +1,1 @@
-{"status": "passing", "notes": "GET /bookmarks with limit (1-100, default 20) and microsecond cursor per ADR 0004. status filter left to its own feature."}
+{"status": "passing", "notes": "GET /bookmarks with limit (1-100, default 20) and microsecond cursor per ADR 0004. Cursor timestamps must round-trip through toISOString, so nonexistent dates (2024-02-31) are 400 invalid_cursor, not 500. status filter left to its own feature."}
