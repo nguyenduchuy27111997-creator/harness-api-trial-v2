@@ -1,6 +1,7 @@
 import { createRoute, OpenAPIHono, z } from "@hono/zod-openapi";
 import { requireAuth, revokeToken, signIn, signUp } from "../lib/auth.js";
 import { apiError, ErrorSchema, requireJson, validationHook } from "../lib/errors.js";
+import { rateLimitedResponse } from "../lib/rate-limit.js";
 
 const Email = z
   .string()
@@ -61,6 +62,7 @@ const signOutRoute = createRoute({
   responses: {
     204: { description: "Token revoked" },
     401: { description: "Missing or invalid token", content: { "application/json": { schema: ErrorSchema } } },
+    429: rateLimitedResponse,
     500: { description: "Unexpected error", content: { "application/json": { schema: ErrorSchema } } },
   },
 });

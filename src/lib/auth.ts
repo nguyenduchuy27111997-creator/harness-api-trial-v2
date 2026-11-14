@@ -4,7 +4,9 @@ import { and, eq, isNull } from "drizzle-orm";
 import type { MiddlewareHandler } from "hono";
 import { db } from "../db/client.js";
 import { tokens, users } from "../db/schema.js";
+import { env } from "./env.js";
 import { apiError } from "./errors.js";
+import { hit, rateLimited } from "./rate-limit.js";
 
 const scryptAsync = promisify(scrypt) as (pw: string, salt: Buffer, keylen: number) => Promise<Buffer>;
 
@@ -70,6 +72,13 @@ export const requireAuth: MiddlewareHandler<{ Variables: { userId: string; token
         .where(and(eq(tokens.tokenHash, hashToken(m[1]!)), isNull(tokens.revokedAt)))
     : [];
   if (!row) return apiError(c, 401, "unauthorized", "Missing or invalid bearer token");
+  const read = c.req.method === "GET";
+  const verdict = await hit(
+    `${read ? "read" : "write"}:${row.id}`,
+    read ? env.RATE_LIMIT_READ_PER_MIN : env.RATE_LIMIT_WRITE_PER_MIN,
+    60,
+  );
+  if (verdict.limited) return rateLimited(c, verdict.retryAfter);
   c.set("userId", row.userId);
   c.set("tokenId", row.id);
   await next();
