@@ -3,6 +3,7 @@ import { requireAuth } from "../lib/auth.js";
 import { createBookmark, deleteBookmark, findBookmarkIdByUrl, getBookmark, listBookmarks, updateBookmark } from "../lib/bookmarks.js";
 import { decodeCursor, LimitSchema } from "../lib/pagination.js";
 import { apiError, ErrorSchema, requireJson, validationHook } from "../lib/errors.js";
+import { rateLimitedResponse } from "../lib/rate-limit.js";
 
 const BookmarkSchema = z.object({
   id: z.uuid(),
@@ -50,6 +51,7 @@ const createRouteDef = createRoute({
     201: { description: "Bookmark saved", content: { "application/json": { schema: BookmarkSchema } } },
     400: err("Validation error"),
     401: err("Missing or invalid token"),
+    429: rateLimitedResponse,
     409: err("Url already saved"),
     500: err("Unexpected error"),
   },
@@ -64,6 +66,7 @@ const getRouteDef = createRoute({
   responses: {
     200: { description: "The bookmark", content: { "application/json": { schema: BookmarkSchema } } },
     401: err("Missing or invalid token"),
+    429: rateLimitedResponse,
     404: err("Not found"),
     500: err("Unexpected error"),
   },
@@ -86,6 +89,7 @@ const listRouteDef = createRoute({
     },
     400: err("Validation error or invalid cursor"),
     401: err("Missing or invalid token"),
+    429: rateLimitedResponse,
     500: err("Unexpected error"),
   },
 });
