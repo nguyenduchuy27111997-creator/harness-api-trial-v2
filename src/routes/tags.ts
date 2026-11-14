@@ -1,8 +1,8 @@
 import { createRoute, OpenAPIHono, z } from "@hono/zod-openapi";
 import { requireAuth } from "../lib/auth.js";
-import { apiError, ErrorSchema, validationHook } from "../lib/errors.js";
+import { apiError, ErrorSchema, requireJson, validationHook } from "../lib/errors.js";
 import { rateLimitedResponse } from "../lib/rate-limit.js";
-import { addTag, listTags, removeTag, TagName } from "../lib/tags.js";
+import { addTag, listTags, removeTag, renameTag, TagName } from "../lib/tags.js";
 
 const BookmarkSchema = z.object({
   id: z.uuid(),
@@ -65,6 +65,28 @@ const listTagsRouteDef = createRoute({
   },
 });
 
+const renameTagRouteDef = createRoute({
+  method: "patch",
+  path: "/tags/{name}",
+  security: [{ bearerAuth: [] }],
+  middleware: [requireAuth, requireJson],
+  request: {
+    params: z.object({ name: z.string() }),
+    body: { required: true, content: { "application/json": { schema: z.object({ name: TagName }) } } },
+  },
+  responses: {
+    200: {
+      description: "The new tag name with its bookmark count",
+      content: { "application/json": { schema: z.object({ name: z.string(), count: z.number().int() }) } },
+    },
+    400: err("Validation error"),
+    401: err("Missing or invalid token"),
+    404: err("Not found"),
+    429: rateLimitedResponse,
+    500: err("Unexpected error"),
+  },
+});
+
 export const tags = new OpenAPIHono<{ Variables: { userId: string; tokenId: string } }>({
   defaultHook: validationHook,
 }).openapi(addTagRouteDef, async (c) => {
@@ -80,4 +102,11 @@ export const tags = new OpenAPIHono<{ Variables: { userId: string; tokenId: stri
     if (result === "not_found") return apiError(c, 404, "not_found", "Bookmark not found");
     return c.json(result, 200);
   })
-  .openapi(listTagsRouteDef, async (c) => c.json({ items: await listTags(c.var.userId) }, 200));
+  .openapi(listTagsRouteDef, async (c) => c.json({ items: await listTags(c.var.userId) }, 200))
+  .openapi(renameTagRouteDef, async (c) => {
+    const { name } = c.req.valid("param");
+    const body = c.req.valid("json");
+    const result = await renameTag(c.var.userId, name, body.name);
+    if (result === "not_found") return apiError(c, 404, "not_found", "Tag not found");
+    return c.json(result, 200);
+  });

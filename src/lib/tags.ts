@@ -1,5 +1,5 @@
 import { z } from "@hono/zod-openapi";
-import { and, asc, count, eq } from "drizzle-orm";
+import { and, asc, count, eq, sql } from "drizzle-orm";
 import { db } from "../db/client.js";
 import { bookmarks, bookmarkTags } from "../db/schema.js";
 import { getBookmarkWithTags } from "./bookmarks.js";
@@ -56,4 +56,28 @@ export async function listTags(userId: string) {
     .where(eq(bookmarkTags.userId, userId))
     .groupBy(bookmarkTags.name)
     .orderBy(asc(bookmarkTags.name));
+}
+
+// Merges into `to` if the user already has it. Returns "not_found" (no bookmark of the user carries `from`) or the new tag with its count.
+export async function renameTag(userId: string, from: string, to: string) {
+  from = from.toLowerCase();
+  return db.transaction(async (tx) => {
+    if (from !== to) {
+      await tx.execute(sql`
+        insert into bookmark_tags (bookmark_id, user_id, name)
+        select bookmark_id, user_id, ${to} from bookmark_tags where user_id = ${userId} and name = ${from}
+        on conflict do nothing`);
+      const deleted = await tx
+        .delete(bookmarkTags)
+        .where(and(eq(bookmarkTags.userId, userId), eq(bookmarkTags.name, from)))
+        .returning({ id: bookmarkTags.bookmarkId });
+      if (deleted.length === 0) return "not_found" as const;
+    }
+    const [{ count: n } = { count: 0 }] = await tx
+      .select({ count: count() })
+      .from(bookmarkTags)
+      .where(and(eq(bookmarkTags.userId, userId), eq(bookmarkTags.name, to)));
+    if (from === to && n === 0) return "not_found" as const;
+    return { name: to, count: n };
+  });
 }
