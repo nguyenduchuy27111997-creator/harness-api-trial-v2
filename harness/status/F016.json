@@ -1,0 +1,4 @@
+{
+  "status": "passing",
+  "notes": "perf.ts signs up a fresh user and seeds 1,000 bookmarks (every third read) through the API, then loads the 4 bookmark routes from perf.config.json (auth/cursor flags per design; cursor page is ?limit=20). p99 budget 150 ms each."
+}
