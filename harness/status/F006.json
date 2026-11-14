@@ -1,0 +1,4 @@
+{
+  "status": "passing",
+  "notes": "POST /bookmarks built (lib/bookmarks.createBookmark, routes/bookmarks, app wiring, openapi.json). A repeated url answers 409 duplicate_url without existing_id: F007 adds that. Fixed a flaky test helper (uniqueEmail now has a random part; parallel test files could collide). Environment: stale old-schema tables in this lane's container harness-pg-f006 were dumped and dropped."
+}

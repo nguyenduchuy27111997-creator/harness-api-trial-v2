@@ -1,6 +1,7 @@
 import { OpenAPIHono } from "@hono/zod-openapi";
 import { onError } from "./lib/errors.js";
 import { auth } from "./routes/auth.js";
+import { bookmarks } from "./routes/bookmarks.js";
 import { health } from "./routes/health.js";
 import { me } from "./routes/me.js";
 
@@ -10,6 +11,7 @@ export const app = new OpenAPIHono();
 app.route("/", health);
 app.route("/", auth);
 app.route("/", me);
+app.route("/", bookmarks);
 app.openAPIRegistry.registerComponent("securitySchemes", "bearerAuth", { type: "http", scheme: "bearer" });
 app.onError(onError);
 

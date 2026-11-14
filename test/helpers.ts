@@ -1,9 +1,10 @@
+import { randomUUID } from "node:crypto";
 import { call } from "./contract.js";
 
 // Unique per run and per lane (golden principle 7); lowercase so it equals the stored email.
 let n = 0;
 export const uniqueEmail = () =>
-  `me+${process.env.HARNESS_LANE ?? "x"}-${Date.now()}-${n++}@example.com`.toLowerCase();
+  `me+${process.env.HARNESS_LANE ?? "x"}-${Date.now()}-${n++}-${randomUUID().slice(0, 8)}@example.com`.toLowerCase();
 
 // Signs up a fresh user through the API and returns the user and bearer token.
 export async function signUpFresh(password = "correct-horse") {
