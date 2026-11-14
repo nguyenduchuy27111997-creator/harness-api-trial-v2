@@ -1,0 +1,4 @@
+{
+  "status": "passing",
+  "notes": "No product change: F107's requireAuth already counts GETs as read:<tokenId> with RATE_LIMIT_READ_PER_MIN (300) per 60 s window; /openapi.json is outside requireAuth. Added the test-writer's test/read-rate-limit.test.ts unchanged. That test reads the Node clock and waits only when >=50 s into the minute, not the Postgres clock with 20 s left as docs/design/M2.md asks; not blocking (burst takes ~1 s)."
+}
