@@ -1,5 +1,5 @@
 import { z } from "@hono/zod-openapi";
-import { and, eq } from "drizzle-orm";
+import { and, asc, count, eq } from "drizzle-orm";
 import { db } from "../db/client.js";
 import { bookmarks, bookmarkTags } from "../db/schema.js";
 import { getBookmarkWithTags } from "./bookmarks.js";
@@ -47,4 +47,13 @@ export async function removeTag(userId: string, id: string, tag: string) {
     .delete(bookmarkTags)
     .where(and(eq(bookmarkTags.bookmarkId, id), eq(bookmarkTags.userId, userId), eq(bookmarkTags.name, tag)));
   return (await getBookmarkWithTags(userId, id)) ?? "not_found";
+}
+
+export async function listTags(userId: string) {
+  return db
+    .select({ name: bookmarkTags.name, count: count() })
+    .from(bookmarkTags)
+    .where(eq(bookmarkTags.userId, userId))
+    .groupBy(bookmarkTags.name)
+    .orderBy(asc(bookmarkTags.name));
 }

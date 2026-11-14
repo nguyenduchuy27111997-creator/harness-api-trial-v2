@@ -2,7 +2,7 @@ import { createRoute, OpenAPIHono, z } from "@hono/zod-openapi";
 import { requireAuth } from "../lib/auth.js";
 import { apiError, ErrorSchema, validationHook } from "../lib/errors.js";
 import { rateLimitedResponse } from "../lib/rate-limit.js";
-import { addTag, removeTag, TagName } from "../lib/tags.js";
+import { addTag, listTags, removeTag, TagName } from "../lib/tags.js";
 
 const BookmarkSchema = z.object({
   id: z.uuid(),
@@ -49,6 +49,22 @@ const removeTagRouteDef = createRoute({
   },
 });
 
+const listTagsRouteDef = createRoute({
+  method: "get",
+  path: "/tags",
+  security: [{ bearerAuth: [] }],
+  middleware: [requireAuth],
+  responses: {
+    200: {
+      description: "My tags with bookmark counts, by name",
+      content: { "application/json": { schema: z.object({ items: z.array(z.object({ name: z.string(), count: z.number().int() })) }) } },
+    },
+    401: err("Missing or invalid token"),
+    429: rateLimitedResponse,
+    500: err("Unexpected error"),
+  },
+});
+
 export const tags = new OpenAPIHono<{ Variables: { userId: string; tokenId: string } }>({
   defaultHook: validationHook,
 }).openapi(addTagRouteDef, async (c) => {
@@ -63,4 +79,5 @@ export const tags = new OpenAPIHono<{ Variables: { userId: string; tokenId: stri
     const result = await removeTag(c.var.userId, id, tag);
     if (result === "not_found") return apiError(c, 404, "not_found", "Bookmark not found");
     return c.json(result, 200);
-  });
+  })
+  .openapi(listTagsRouteDef, async (c) => c.json({ items: await listTags(c.var.userId) }, 200));
