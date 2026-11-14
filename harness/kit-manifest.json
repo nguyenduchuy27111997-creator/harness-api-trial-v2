@@ -1,5 +1,5 @@
 {
-  "version": "5.45.2",
+  "version": "5.45.3",
   "preset": "hono-postgres",
   "files": {
     ".claude/agents/advisor.md": "e7a83e9817e031dfa49a2671940111ea252614b123ef8c48dc15cd3aac0b2c52",
@@ -221,7 +221,7 @@
     "package.json": "83c9551a6c75279e88b2262c36cd08e2f0bd1737c96c8cda354682762c14d0b3",
     "perf.config.json": "b4699395a646959dbe8afbaf82a606dd1225d11a01e5ca04283675800c260da3",
     "scripts/check.sh": "d3c43da5c1ad0a85759b1bedb3d3c766624327afaeadcb9892e4308d372d8cb7",
-    "scripts/db-up.sh": "9402218206d51d1f7f5ac455641eec91eea647ae679ccdd1a89e988341641b86",
+    "scripts/db-up.sh": "fe37011a5b79c732e6ac1a619f0406c480e9625983f66ea42e37ad516cad9cf0",
     "scripts/drift.sh": "c18b33729f99a41d5801a40f59f2597f15332eeb86425e3be46c3096d7fa2300",
     "scripts/migration-lint.py": "d91292dc109b7621c1efc6ae5547fc98b3a8f32898bb44381b6a2203a8e47d61",
     "scripts/openapi.ts": "55954169a6fca77567b1fb62b3d514697020490eeec32ad42f12fa338fd0812a",

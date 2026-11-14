@@ -5,7 +5,16 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 [ -n "${DATABASE_URL:-}" ] && exit 0
-name="harness-pg-$(basename "$PWD" | tr 'A-Z' 'a-z' | tr -c 'a-z0-9-' '-' | sed 's/-*$//')"
+# One container per checkout (the project, each loop worktree, a CI runner's checkout), named after the
+# project, a short id of its GitHub repo, and the worktree. Without the project and repo in the name, a lane
+# folder such as F005 found another project's harness-pg-f005, with that project's tables and migrations.
+slug() { tr 'A-Z' 'a-z' | tr -c 'a-z0-9-' '-' | sed 's/-*$//'; }
+common="$(cd "$(git rev-parse --git-common-dir 2>/dev/null || echo .git)" 2>/dev/null && pwd || echo "$PWD/.git")"
+project="$(basename "$(dirname "$common")" | slug)"
+repo_id="$( (git remote get-url origin 2>/dev/null || echo "$common") | git hash-object --stdin | cut -c1-6)"
+name="harness-pg-$project-$repo_id"
+here="$(basename "$PWD" | slug)"
+[ "$here" = "$project" ] || name="$name-$here"
 if ! docker ps --format '{{.Names}}' | grep -qx "$name"; then
   if docker ps -a --format '{{.Names}}' | grep -qx "$name"; then
     docker start "$name" >/dev/null
