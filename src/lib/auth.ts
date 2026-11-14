@@ -79,3 +79,11 @@ export async function getUser(userId: string) {
   const [row] = await db.select().from(users).where(eq(users.id, userId));
   return row ? toUser(row) : null;
 }
+
+// Revokes one token, scoped to its owner. Other tokens of the user stay valid.
+export async function revokeToken(userId: string, tokenId: string) {
+  await db
+    .update(tokens)
+    .set({ revokedAt: new Date() })
+    .where(and(eq(tokens.id, tokenId), eq(tokens.userId, userId), isNull(tokens.revokedAt)));
+}
