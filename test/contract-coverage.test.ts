@@ -34,7 +34,7 @@ test("every M1 route is listed", () => {
 test("routes document their 401, 404 and 400 error bodies", () => {
   for (const { label, path, op } of ops) {
     if (op.security?.length) expectError(label, op, 401);
-    if (path.includes("{id}")) expectError(label, op, 404);
+    if (/\{(id|name)\}/.test(path)) expectError(label, op, 404);
     if (op.requestBody || op.parameters?.some((p) => p.in === "query")) expectError(label, op, 400);
   }
 });
@@ -44,4 +44,31 @@ test("conflicts are documented", () => {
   const props = doc.paths["/bookmarks"]!.post!.responses[409]!.content!["application/json"]!.schema!.properties!.error!.properties!;
   expect(props.existing_id).toBeDefined();
   expectError("POST /auth/sign-up", doc.paths["/auth/sign-up"]!.post!, 409);
+});
+
+// F111: M2 routes and rate limits.
+test("every M2 route is listed", () => {
+  const listed = ops.map((o) => o.label);
+  for (const r of ["PUT /bookmarks/{id}/tags/{tag}", "DELETE /bookmarks/{id}/tags/{tag}", "GET /tags", "PATCH /tags/{name}"]) {
+    expect(listed).toContain(r);
+  }
+});
+
+test("every rate-limited route documents 429 with Retry-After", () => {
+  const unlimited = ["GET /health", "POST /auth/sign-up"];
+  for (const { label, op } of ops) {
+    if (unlimited.includes(label)) {
+      expect(op.responses[429], `${label} has no 429`).toBeUndefined();
+      continue;
+    }
+    expectError(label, op, 429);
+    const headers = (op.responses[429] as Res & { headers?: Record<string, unknown> }).headers;
+    expect(headers?.["Retry-After"], `${label} 429 documents Retry-After`).toBeDefined();
+  }
+});
+
+test("GET /bookmarks documents the tag, status and q query params", () => {
+  const names = (doc.paths["/bookmarks"]!.get!.parameters as { in: string; name: string }[])
+    .filter((p) => p.in === "query").map((p) => p.name);
+  for (const n of ["tag", "status", "q"]) expect(names).toContain(n);
 });

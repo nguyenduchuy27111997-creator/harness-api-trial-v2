@@ -1,0 +1,1 @@
+{"status":"passing","notes":"Added 429 (Retry-After) to PATCH/DELETE /bookmarks/{id} and PUT/DELETE /bookmarks/{id}/read in src/routes/bookmarks.ts (design 0005 requires it); regenerated openapi.json; extended test/contract-coverage.test.ts. Verifier PASS."}

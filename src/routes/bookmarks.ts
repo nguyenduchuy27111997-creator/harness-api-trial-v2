@@ -108,6 +108,7 @@ const updateRouteDef = createRoute({
     200: { description: "The updated bookmark", content: { "application/json": { schema: BookmarkSchema } } },
     400: err("Validation error"),
     401: err("Missing or invalid token"),
+    429: rateLimitedResponse,
     404: err("Not found"),
     500: err("Unexpected error"),
   },
@@ -122,6 +123,7 @@ const deleteRouteDef = createRoute({
   responses: {
     204: { description: "Bookmark deleted" },
     401: err("Missing or invalid token"),
+    429: rateLimitedResponse,
     404: err("Not found"),
     500: err("Unexpected error"),
   },
@@ -136,6 +138,7 @@ const readRouteDef = createRoute({
   responses: {
     200: { description: "The bookmark, marked read", content: { "application/json": { schema: BookmarkSchema } } },
     401: err("Missing or invalid token"),
+    429: rateLimitedResponse,
     404: err("Not found"),
     500: err("Unexpected error"),
   },
@@ -150,6 +153,7 @@ const unreadRouteDef = createRoute({
   responses: {
     200: { description: "The bookmark, marked unread", content: { "application/json": { schema: BookmarkSchema } } },
     401: err("Missing or invalid token"),
+    429: rateLimitedResponse,
     404: err("Not found"),
     500: err("Unexpected error"),
   },
