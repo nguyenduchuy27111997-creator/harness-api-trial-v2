@@ -1001,6 +1001,18 @@
             "required": false,
             "name": "cursor",
             "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "read",
+                "unread"
+              ]
+            },
+            "required": false,
+            "name": "status",
+            "in": "query"
           }
         ],
         "responses": {
