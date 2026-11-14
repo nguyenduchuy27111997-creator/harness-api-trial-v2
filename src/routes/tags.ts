@@ -1,6 +1,7 @@
 import { createRoute, OpenAPIHono, z } from "@hono/zod-openapi";
 import { requireAuth } from "../lib/auth.js";
 import { apiError, ErrorSchema, validationHook } from "../lib/errors.js";
+import { rateLimitedResponse } from "../lib/rate-limit.js";
 import { addTag, listTags, removeTag, TagName } from "../lib/tags.js";
 
 const BookmarkSchema = z.object({
@@ -57,6 +58,7 @@ const listTagsRouteDef = createRoute({
       content: { "application/json": { schema: z.object({ items: z.array(z.object({ name: z.string(), count: z.number().int() })) }) } },
     },
     401: err("Missing or invalid token"),
+    429: rateLimitedResponse,
     500: err("Unexpected error"),
   },
 });
