@@ -1,6 +1,6 @@
 import { createRoute, OpenAPIHono, z } from "@hono/zod-openapi";
 import { requireAuth } from "../lib/auth.js";
-import { createBookmark, getBookmark, listBookmarks } from "../lib/bookmarks.js";
+import { createBookmark, getBookmark, listBookmarks, updateBookmark } from "../lib/bookmarks.js";
 import { decodeCursor, LimitSchema } from "../lib/pagination.js";
 import { apiError, ErrorSchema, requireJson, validationHook } from "../lib/errors.js";
 
@@ -29,6 +29,11 @@ const Url = z
 
 const CreateBody = z.object({
   url: Url,
+  title: z.string().trim().min(1).max(500).optional(),
+  note: z.string().max(10000).nullable().optional(),
+});
+
+const UpdateBody = z.object({
   title: z.string().trim().min(1).max(500).optional(),
   note: z.string().max(10000).nullable().optional(),
 });
@@ -85,6 +90,24 @@ const listRouteDef = createRoute({
   },
 });
 
+const updateRouteDef = createRoute({
+  method: "patch",
+  path: "/bookmarks/{id}",
+  security: [{ bearerAuth: [] }],
+  middleware: [requireAuth, requireJson],
+  request: {
+    params: z.object({ id: z.string() }),
+    body: { required: true, content: { "application/json": { schema: UpdateBody } } },
+  },
+  responses: {
+    200: { description: "The updated bookmark", content: { "application/json": { schema: BookmarkSchema } } },
+    400: err("Validation error"),
+    401: err("Missing or invalid token"),
+    404: err("Not found"),
+    500: err("Unexpected error"),
+  },
+});
+
 export const bookmarks = new OpenAPIHono<{ Variables: { userId: string; tokenId: string } }>({
   defaultHook: validationHook,
 }).openapi(createRouteDef, async (c) => {
@@ -100,4 +123,8 @@ export const bookmarks = new OpenAPIHono<{ Variables: { userId: string; tokenId:
   const decoded = cursor === undefined ? null : decodeCursor(cursor);
   if (cursor !== undefined && !decoded) return apiError(c, 400, "invalid_cursor", "cursor: not a valid cursor");
   return c.json(await listBookmarks(c.var.userId, limit ?? 20, decoded), 200);
+}).openapi(updateRouteDef, async (c) => {
+  const updated = await updateBookmark(c.var.userId, c.req.valid("param").id, c.req.valid("json"));
+  if (!updated) return apiError(c, 404, "not_found", "Bookmark not found");
+  return c.json(updated, 200);
 });
