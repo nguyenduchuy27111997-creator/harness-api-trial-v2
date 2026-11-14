@@ -1,0 +1,4 @@
+{
+  "status": "passing",
+  "notes": "GET /bookmarks/{id} built (lib/bookmarks.getBookmark, route, openapi.json). Non-uuid ids are 404 via a regex check in the lib (param schema is plain string so zod gives no 400). Unrelated: GET /bookmarks/ (trailing slash) returns Hono's plain-text 404, not the JSON envelope."
+}

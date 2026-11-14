@@ -1,6 +1,6 @@
 import { createRoute, OpenAPIHono, z } from "@hono/zod-openapi";
 import { requireAuth } from "../lib/auth.js";
-import { createBookmark } from "../lib/bookmarks.js";
+import { createBookmark, getBookmark } from "../lib/bookmarks.js";
 import { apiError, ErrorSchema, requireJson, validationHook } from "../lib/errors.js";
 
 const BookmarkSchema = z.object({
@@ -49,10 +49,28 @@ const createRouteDef = createRoute({
   },
 });
 
+const getRouteDef = createRoute({
+  method: "get",
+  path: "/bookmarks/{id}",
+  security: [{ bearerAuth: [] }],
+  middleware: [requireAuth],
+  request: { params: z.object({ id: z.string() }) },
+  responses: {
+    200: { description: "The bookmark", content: { "application/json": { schema: BookmarkSchema } } },
+    401: err("Missing or invalid token"),
+    404: err("Not found"),
+    500: err("Unexpected error"),
+  },
+});
+
 export const bookmarks = new OpenAPIHono<{ Variables: { userId: string; tokenId: string } }>({
   defaultHook: validationHook,
 }).openapi(createRouteDef, async (c) => {
   const created = await createBookmark(c.var.userId, c.req.valid("json"));
   if (!created) return apiError(c, 409, "duplicate_url", "You already saved this url");
   return c.json(created, 201);
+}).openapi(getRouteDef, async (c) => {
+  const found = await getBookmark(c.var.userId, c.req.valid("param").id);
+  if (!found) return apiError(c, 404, "not_found", "Bookmark not found");
+  return c.json(found, 200);
 });
