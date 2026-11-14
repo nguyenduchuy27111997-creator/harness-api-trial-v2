@@ -34,3 +34,17 @@ export async function addTag(userId: string, id: string, tag: string) {
   if (result !== "ok") return result;
   return (await getBookmarkWithTags(userId, id)) ?? "not_found";
 }
+
+// Idempotent. Returns "not_found" (bad id or not the user's), or the bookmark.
+export async function removeTag(userId: string, id: string, tag: string) {
+  if (!UUID.test(id)) return "not_found";
+  const [owned] = await db
+    .select({ id: bookmarks.id })
+    .from(bookmarks)
+    .where(and(eq(bookmarks.id, id), eq(bookmarks.userId, userId)));
+  if (!owned) return "not_found";
+  await db
+    .delete(bookmarkTags)
+    .where(and(eq(bookmarkTags.bookmarkId, id), eq(bookmarkTags.userId, userId), eq(bookmarkTags.name, tag)));
+  return (await getBookmarkWithTags(userId, id)) ?? "not_found";
+}

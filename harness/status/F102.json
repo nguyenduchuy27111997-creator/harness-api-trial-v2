@@ -1,0 +1,1 @@
+{"status": "passing", "notes": "DELETE /bookmarks/{id}/tags/{tag} added (removeTag in src/lib/tags.ts); idempotent; openapi.json regenerated."}
