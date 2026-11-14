@@ -1,0 +1,1 @@
+{"status": "passing", "notes": "DELETE /bookmarks/{id}: 204, 404 for unknown/foreign/non-uuid ids. openapi.json updated."}

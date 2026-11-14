@@ -94,3 +94,13 @@ export async function updateBookmark(userId: string, id: string, patch: { title?
     .returning();
   return row ? toBookmark(row) : null;
 }
+
+// Returns false when the id is not a uuid or the bookmark is not the user's.
+export async function deleteBookmark(userId: string, id: string) {
+  if (!UUID.test(id)) return false;
+  const rows = await db
+    .delete(bookmarks)
+    .where(and(eq(bookmarks.id, id), eq(bookmarks.userId, userId)))
+    .returning({ id: bookmarks.id });
+  return rows.length > 0;
+}
