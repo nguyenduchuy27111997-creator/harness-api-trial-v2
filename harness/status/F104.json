@@ -1,0 +1,1 @@
+{"status": "passing", "notes": "PATCH /tags/{name} via lib/tags.renameTag (merge with on conflict do nothing); requireJson on the route; openapi.json regenerated. No test covers the non-JSON body case (test file is the test-writer's, left unchanged)."}
