@@ -1,6 +1,7 @@
 import { createRoute, OpenAPIHono, z } from "@hono/zod-openapi";
 import { requireAuth } from "../lib/auth.js";
 import { apiError, ErrorSchema, validationHook } from "../lib/errors.js";
+import { rateLimitedResponse } from "../lib/rate-limit.js";
 import { addTag, removeTag, TagName } from "../lib/tags.js";
 
 const BookmarkSchema = z.object({
@@ -27,6 +28,7 @@ const addTagRouteDef = createRoute({
     400: err("Validation error or too_many_tags"),
     401: err("Missing or invalid token"),
     404: err("Not found"),
+    429: rateLimitedResponse,
     500: err("Unexpected error"),
   },
 });
@@ -42,6 +44,7 @@ const removeTagRouteDef = createRoute({
     400: err("Validation error"),
     401: err("Missing or invalid token"),
     404: err("Not found"),
+    429: rateLimitedResponse,
     500: err("Unexpected error"),
   },
 });
