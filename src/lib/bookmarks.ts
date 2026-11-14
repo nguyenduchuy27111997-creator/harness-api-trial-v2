@@ -1,4 +1,4 @@
-import { and, asc, eq, inArray, isNotNull, isNull, sql } from "drizzle-orm";
+import { and, asc, eq, exists, inArray, isNotNull, isNull, sql } from "drizzle-orm";
 import { db } from "../db/client.js";
 import { bookmarks, bookmarkTags } from "../db/schema.js";
 import { encodeCursor, type Cursor } from "./pagination.js";
@@ -78,7 +78,7 @@ export async function getBookmark(userId: string, id: string) {
 const MICROS = sql<string>`to_char(${bookmarks.createdAt} at time zone 'utc', 'YYYY-MM-DD"T"HH24:MI:SS.US"Z"')`;
 
 // Newest first. next_cursor is set only when more rows exist beyond this page.
-export async function listBookmarks(userId: string, limit: number, cursor: Cursor | null, status?: "read" | "unread") {
+export async function listBookmarks(userId: string, limit: number, cursor: Cursor | null, status?: "read" | "unread", tag?: string) {
   const rows = await db
     .select({ row: bookmarks, micros: MICROS })
     .from(bookmarks)
@@ -86,6 +86,14 @@ export async function listBookmarks(userId: string, limit: number, cursor: Curso
       and(
         eq(bookmarks.userId, userId),
         status === "read" ? isNotNull(bookmarks.readAt) : status === "unread" ? isNull(bookmarks.readAt) : undefined,
+        tag
+          ? exists(
+              db
+                .select({ one: sql`1` })
+                .from(bookmarkTags)
+                .where(and(eq(bookmarkTags.bookmarkId, bookmarks.id), eq(bookmarkTags.userId, userId), eq(bookmarkTags.name, tag))),
+            )
+          : undefined,
         cursor ? sql`(${bookmarks.createdAt}, ${bookmarks.id}) < (${cursor.c}::timestamptz, ${cursor.i}::uuid)` : undefined,
       ),
     )
