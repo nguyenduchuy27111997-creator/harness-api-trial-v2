@@ -28,6 +28,7 @@ const addTagRouteDef = createRoute({
     400: err("Validation error or too_many_tags"),
     401: err("Missing or invalid token"),
     404: err("Not found"),
+    429: rateLimitedResponse,
     500: err("Unexpected error"),
   },
 });
@@ -43,6 +44,7 @@ const removeTagRouteDef = createRoute({
     400: err("Validation error"),
     401: err("Missing or invalid token"),
     404: err("Not found"),
+    429: rateLimitedResponse,
     500: err("Unexpected error"),
   },
 });

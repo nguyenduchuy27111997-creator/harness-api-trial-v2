@@ -1,6 +1,7 @@
 import { createRoute, OpenAPIHono, z } from "@hono/zod-openapi";
 import { requireAuth, revokeToken, signIn, signUp } from "../lib/auth.js";
 import { apiError, ErrorSchema, requireJson, validationHook } from "../lib/errors.js";
+import { hit, rateLimited, rateLimitedResponse } from "../lib/rate-limit.js";
 
 const Email = z
   .string()
@@ -49,6 +50,7 @@ const signInRoute = createRoute({
     },
     400: { description: "Validation error", content: { "application/json": { schema: ErrorSchema } } },
     401: { description: "Invalid credentials", content: { "application/json": { schema: ErrorSchema } } },
+    429: rateLimitedResponse,
     500: { description: "Unexpected error", content: { "application/json": { schema: ErrorSchema } } },
   },
 });
@@ -61,6 +63,7 @@ const signOutRoute = createRoute({
   responses: {
     204: { description: "Token revoked" },
     401: { description: "Missing or invalid token", content: { "application/json": { schema: ErrorSchema } } },
+    429: rateLimitedResponse,
     500: { description: "Unexpected error", content: { "application/json": { schema: ErrorSchema } } },
   },
 });
@@ -72,6 +75,8 @@ export const auth = new OpenAPIHono<{ Variables: { userId: string; tokenId: stri
   return c.json(created, 201);
 }).openapi(signInRoute, async (c) => {
   const { email, password } = c.req.valid("json");
+  const limit = await hit(`sign-in:${email}`, 10, 900);
+  if (limit.limited) return rateLimited(c, limit.retryAfter);
   const result = await signIn(email, password);
   if (!result) return apiError(c, 401, "invalid_credentials", "Email or password is incorrect");
   return c.json(result, 200);

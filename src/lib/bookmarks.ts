@@ -1,4 +1,4 @@
-import { and, asc, eq, inArray, sql } from "drizzle-orm";
+import { and, asc, eq, inArray, isNotNull, isNull, sql } from "drizzle-orm";
 import { db } from "../db/client.js";
 import { bookmarks, bookmarkTags } from "../db/schema.js";
 import { encodeCursor, type Cursor } from "./pagination.js";
@@ -78,13 +78,14 @@ export async function getBookmark(userId: string, id: string) {
 const MICROS = sql<string>`to_char(${bookmarks.createdAt} at time zone 'utc', 'YYYY-MM-DD"T"HH24:MI:SS.US"Z"')`;
 
 // Newest first. next_cursor is set only when more rows exist beyond this page.
-export async function listBookmarks(userId: string, limit: number, cursor: Cursor | null) {
+export async function listBookmarks(userId: string, limit: number, cursor: Cursor | null, status?: "read" | "unread") {
   const rows = await db
     .select({ row: bookmarks, micros: MICROS })
     .from(bookmarks)
     .where(
       and(
         eq(bookmarks.userId, userId),
+        status === "read" ? isNotNull(bookmarks.readAt) : status === "unread" ? isNull(bookmarks.readAt) : undefined,
         cursor ? sql`(${bookmarks.createdAt}, ${bookmarks.id}) < (${cursor.c}::timestamptz, ${cursor.i}::uuid)` : undefined,
       ),
     )
@@ -120,4 +121,26 @@ export async function deleteBookmark(userId: string, id: string) {
     .where(and(eq(bookmarks.id, id), eq(bookmarks.userId, userId)))
     .returning({ id: bookmarks.id });
   return rows.length > 0;
+}
+
+// Sets read_at once (keeps the first time on repeats). Returns null when the id is not a uuid or the bookmark is not the user's.
+export async function markBookmarkRead(userId: string, id: string) {
+  if (!UUID.test(id)) return null;
+  const [row] = await db
+    .update(bookmarks)
+    .set({ readAt: sql`coalesce(${bookmarks.readAt}, clock_timestamp())` as unknown as Date, updatedAt: sql`clock_timestamp()` as unknown as Date })
+    .where(and(eq(bookmarks.id, id), eq(bookmarks.userId, userId)))
+    .returning();
+  return row ? (await withTags(userId, [toBookmark(row)]))[0]! : null;
+}
+
+// Clears read_at (a no-op on an unread bookmark). Returns null when the id is not a uuid or the bookmark is not the user's.
+export async function markBookmarkUnread(userId: string, id: string) {
+  if (!UUID.test(id)) return null;
+  const [row] = await db
+    .update(bookmarks)
+    .set({ readAt: null, updatedAt: sql`clock_timestamp()` as unknown as Date })
+    .where(and(eq(bookmarks.id, id), eq(bookmarks.userId, userId)))
+    .returning();
+  return row ? (await withTags(userId, [toBookmark(row)]))[0]! : null;
 }

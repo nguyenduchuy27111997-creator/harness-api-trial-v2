@@ -1,0 +1,1 @@
+{"status":"passing","notes":"POST /auth/sign-in calls lib/rate-limit.hit(\"sign-in:<lowercased email>\", 10, 900) after validation, before the password check; 429 rate_limited + Retry-After. Fixed 15-minute clock windows (same as F107)."}
