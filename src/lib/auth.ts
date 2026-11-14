@@ -1,5 +1,6 @@
-import { createHash, randomBytes, scrypt } from "node:crypto";
+import { createHash, randomBytes, scrypt, timingSafeEqual } from "node:crypto";
 import { promisify } from "node:util";
+import { eq } from "drizzle-orm";
 import { db } from "../db/client.js";
 import { tokens, users } from "../db/schema.js";
 
@@ -42,4 +43,17 @@ export async function signUp(email: string, password: string) {
     if (!row) return null;
     return { user: toUser(row), token: await issueToken(row.id, tx) };
   });
+}
+
+// Stored for unknown emails so the check costs the same scrypt work.
+const dummy = hashPassword("dummy-password").then(({ hash, salt }) => ({ passwordHash: hash, passwordSalt: salt }));
+
+// Email is expected already trimmed and lowercased. Returns null on any bad credential.
+export async function signIn(email: string, password: string) {
+  const [row] = await db.select().from(users).where(eq(users.email, email)).limit(1);
+  const stored = row ?? (await dummy);
+  const key = await scryptAsync(password, Buffer.from(stored.passwordSalt, "hex"), 64);
+  const ok = timingSafeEqual(key, Buffer.from(stored.passwordHash, "hex"));
+  if (!row || !ok) return null;
+  return { user: toUser(row), token: await issueToken(row.id) };
 }

@@ -1,0 +1,4 @@
+{
+  "status": "passing",
+  "notes": "POST /auth/sign-in built (lib/auth signIn, routes/auth, openapi.json). Unknown email runs scrypt against a dummy hash; comparison is timing-safe; 401 invalid_credentials is identical for both failure cases. Env: stale container harness-pg-f002 had no published port; removed and recreated by db-up.sh."
+}

@@ -1,5 +1,5 @@
 import { createRoute, OpenAPIHono, z } from "@hono/zod-openapi";
-import { signUp } from "../lib/auth.js";
+import { signIn, signUp } from "../lib/auth.js";
 import { apiError, ErrorSchema, requireJson, validationHook } from "../lib/errors.js";
 
 const Email = z
@@ -32,9 +32,35 @@ const signUpRoute = createRoute({
   },
 });
 
+const signInRoute = createRoute({
+  method: "post",
+  path: "/auth/sign-in",
+  middleware: [requireJson],
+  request: {
+    body: {
+      required: true,
+      content: { "application/json": { schema: z.object({ email: Email, password: z.string().min(1).max(128) }) } },
+    },
+  },
+  responses: {
+    200: {
+      description: "Signed in",
+      content: { "application/json": { schema: z.object({ user: UserSchema, token: z.string() }) } },
+    },
+    400: { description: "Validation error", content: { "application/json": { schema: ErrorSchema } } },
+    401: { description: "Invalid credentials", content: { "application/json": { schema: ErrorSchema } } },
+    500: { description: "Unexpected error", content: { "application/json": { schema: ErrorSchema } } },
+  },
+});
+
 export const auth = new OpenAPIHono({ defaultHook: validationHook }).openapi(signUpRoute, async (c) => {
   const { email, password } = c.req.valid("json");
   const created = await signUp(email, password);
   if (!created) return apiError(c, 409, "email_taken", "An account with this email already exists");
   return c.json(created, 201);
+}).openapi(signInRoute, async (c) => {
+  const { email, password } = c.req.valid("json");
+  const result = await signIn(email, password);
+  if (!result) return apiError(c, 401, "invalid_credentials", "Email or password is incorrect");
+  return c.json(result, 200);
 });
