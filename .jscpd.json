@@ -1,0 +1,1 @@
+{"threshold": 3, "minLines": 8, "ignore": ["node_modules/**", "coverage/**", "drizzle/**", "openapi.json", "package-lock.json", "harness/office/**"], "reporters": ["console"]}
