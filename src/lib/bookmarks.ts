@@ -37,6 +37,15 @@ export async function createBookmark(userId: string, input: { url: string; title
   return row ? toBookmark(row) : null;
 }
 
+// Id of the user's bookmark holding exactly this url (the unique index compares md5(url)).
+export async function findBookmarkIdByUrl(userId: string, url: string) {
+  const [row] = await db
+    .select({ id: bookmarks.id })
+    .from(bookmarks)
+    .where(and(eq(bookmarks.userId, userId), sql`md5(${bookmarks.url}) = md5(${url})`, eq(bookmarks.url, url)));
+  return row?.id ?? null;
+}
+
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 // Returns null when the id is not a uuid or the bookmark is not the user's (callers answer 404 for both).

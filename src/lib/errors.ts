@@ -3,10 +3,15 @@ import type { Context, ErrorHandler, MiddlewareHandler } from "hono";
 import { HTTPException } from "hono/http-exception";
 
 // Every error body is { error: { code, message } } (docs/design/M1.md, Contract).
-export const ErrorSchema = z.object({ error: z.object({ code: z.string(), message: z.string() }) });
+export const ErrorSchema = z.object({ error: z.object({ code: z.string(), message: z.string(), existing_id: z.uuid().optional() }) });
 
-export const apiError = <S extends 400 | 401 | 404 | 409 | 500>(c: Context, status: S, code: string, message: string) =>
-  c.json({ error: { code, message } }, status);
+export const apiError = <S extends 400 | 401 | 404 | 409 | 500>(
+  c: Context,
+  status: S,
+  code: string,
+  message: string,
+  extra?: { existing_id: string },
+) => c.json({ error: { code, message, ...extra } }, status);
 
 // Route-level zod hook: 400 validation_error whose message starts with the first issue's field path.
 export const validationHook = (result: { success: boolean; error?: z.ZodError }, c: Context) => {
