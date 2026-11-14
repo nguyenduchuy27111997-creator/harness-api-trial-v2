@@ -1013,6 +1013,14 @@
             "required": false,
             "name": "status",
             "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": false,
+            "name": "tag",
+            "in": "query"
           }
         ],
         "responses": {

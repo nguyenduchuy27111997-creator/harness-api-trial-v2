@@ -4,6 +4,7 @@ import { createBookmark, deleteBookmark, findBookmarkIdByUrl, getBookmarkWithTag
 import { decodeCursor, LimitSchema } from "../lib/pagination.js";
 import { apiError, ErrorSchema, requireJson, validationHook } from "../lib/errors.js";
 import { rateLimitedResponse } from "../lib/rate-limit.js";
+import { TagName } from "../lib/tags.js";
 
 const BookmarkSchema = z.object({
   id: z.uuid(),
@@ -77,7 +78,7 @@ const listRouteDef = createRoute({
   path: "/bookmarks",
   security: [{ bearerAuth: [] }],
   middleware: [requireAuth],
-  request: { query: z.object({ limit: LimitSchema, cursor: z.string().optional(), status: z.enum(["read", "unread"]).optional() }) },
+  request: { query: z.object({ limit: LimitSchema, cursor: z.string().optional(), status: z.enum(["read", "unread"]).optional(), tag: TagName.optional() }) },
   responses: {
     200: {
       description: "A page of bookmarks, newest first",
@@ -170,10 +171,10 @@ export const bookmarks = new OpenAPIHono<{ Variables: { userId: string; tokenId:
   if (!found) return apiError(c, 404, "not_found", "Bookmark not found");
   return c.json(found, 200);
 }).openapi(listRouteDef, async (c) => {
-  const { limit, cursor, status } = c.req.valid("query");
+  const { limit, cursor, status, tag } = c.req.valid("query");
   const decoded = cursor === undefined ? null : decodeCursor(cursor);
   if (cursor !== undefined && !decoded) return apiError(c, 400, "invalid_cursor", "cursor: not a valid cursor");
-  return c.json(await listBookmarks(c.var.userId, limit ?? 20, decoded, status), 200);
+  return c.json(await listBookmarks(c.var.userId, limit ?? 20, decoded, status, tag), 200);
 }).openapi(updateRouteDef, async (c) => {
   const updated = await updateBookmark(c.var.userId, c.req.valid("param").id, c.req.valid("json"));
   if (!updated) return apiError(c, 404, "not_found", "Bookmark not found");
