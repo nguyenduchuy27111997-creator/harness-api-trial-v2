@@ -4,6 +4,10 @@
     { "path": "/bookmarks", "p99": 150, "auth": true },
     { "path": "/bookmarks?limit=100", "p99": 150, "auth": true },
     { "path": "/bookmarks?status=read", "p99": 150, "auth": true },
-    { "path": "/bookmarks?limit=20", "p99": 150, "auth": true, "cursor": true }
+    { "path": "/bookmarks?limit=20", "p99": 150, "auth": true, "cursor": true },
+    { "path": "/bookmarks?tag=alpha", "p99": 150, "auth": true },
+    { "path": "/bookmarks?q=perfword", "p99": 150, "auth": true },
+    { "path": "/bookmarks?q=perfword&tag=alpha&status=unread", "p99": 150, "auth": true },
+    { "path": "/tags", "p99": 150, "auth": true }
   ]
 }

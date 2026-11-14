@@ -13,7 +13,7 @@ const server = serve({ fetch: app.fetch, port: 0 });
 await new Promise((r) => server.once("listening", r));
 const { port } = server.address() as { port: number };
 
-// One user with 1,000 bookmarks (every third one read), seeded through the API.
+// One user with 1,000 bookmarks (every third one read, tagged alpha, beta or gamma in blocks of three so each tag has read and unread ones, even ones with "perfword" in the note), seeded through the API.
 const api = `http://127.0.0.1:${port}`;
 const json = { "content-type": "application/json" };
 const signUpRes = await fetch(`${api}/auth/sign-up`, {
@@ -31,11 +31,13 @@ for (let start = 0; start < 1000; start += 50) {
       const res = await fetch(`${api}/bookmarks`, {
         method: "POST",
         headers: { ...headers, ...json },
-        body: JSON.stringify({ url: `https://example.com/perf/${i}`, title: `Perf bookmark ${i}` }),
+        body: JSON.stringify({ url: `https://example.com/perf/${i}`, title: `Perf bookmark ${i}`, ...(i % 2 === 0 ? { note: `Notes about perfword ${i}` } : {}) }),
       });
       if (res.status !== 201) throw new Error(`perf seed: POST /bookmarks returned ${res.status}`);
-      if (i % 3 !== 0) return;
       const { id } = (await res.json()) as { id: string };
+      const tagRes = await fetch(`${api}/bookmarks/${id}/tags/${["alpha", "beta", "gamma"][Math.floor(i / 3) % 3]}`, { method: "PUT", headers });
+      if (tagRes.status !== 200) throw new Error(`perf seed: PUT tag returned ${tagRes.status}`);
+      if (i % 3 !== 0) return;
       const read = await fetch(`${api}/bookmarks/${id}/read`, { method: "PUT", headers });
       if (read.status !== 200) throw new Error(`perf seed: PUT read returned ${read.status}`);
     }),
