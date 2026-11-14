@@ -12,3 +12,9 @@ export async function signUpFresh(password = "correct-horse") {
   const res = await call("post", "/auth/sign-up", { body: { email, password } });
   return res.body as { user: { id: string; email: string; created_at: string }; token: string };
 }
+
+// Saves a bookmark with a unique URL through the API and returns its id.
+export async function saveFreshBookmark(token: string) {
+  const res = await call("post", "/bookmarks", { token, body: { url: `https://example.com/${randomUUID()}` } });
+  return (res.body as { id: string }).id;
+}
