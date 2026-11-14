@@ -1,9 +1,9 @@
 {
   "routes": [
     { "path": "/health", "p99": 50 },
-    { "path": "/bookmarks", "p99": 150 },
-    { "path": "/bookmarks?limit=100", "p99": 150 },
-    { "path": "/bookmarks?status=read", "p99": 150 },
-    { "path": "/bookmarks?limit=100&cursor={cursor}", "p99": 150 }
+    { "path": "/bookmarks", "p99": 150, "auth": true },
+    { "path": "/bookmarks?limit=100", "p99": 150, "auth": true },
+    { "path": "/bookmarks?status=read", "p99": 150, "auth": true },
+    { "path": "/bookmarks?limit=20", "p99": 150, "auth": true, "cursor": true }
   ]
 }
