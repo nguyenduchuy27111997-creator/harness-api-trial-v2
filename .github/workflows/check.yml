@@ -52,6 +52,8 @@ jobs:
           # on a flaky network. GitHub's runners start empty, so they keep it.
           cache: ${{ !vars.HARNESS_RUNS_ON && 'npm' || '' }}
       - uses: astral-sh/setup-uv@d0cc045d04ccac9d8b7881df0226f9e82c39688e # v6.8.0   # Semgrep (scripts/sast.sh)
+        with:
+          version: "0.11.28"  # same uv as the local machine
       - run: npm ci
       - run: ./scripts/check.sh
       - name: Wait for a quiet machine

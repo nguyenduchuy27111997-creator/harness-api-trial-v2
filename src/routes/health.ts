@@ -12,4 +12,4 @@ const route = createRoute({
   },
 });
 
-export const health = new OpenAPIHono().openapi(route, (c) => c.json({ app: "__APP_NAME__" }, 200));
+export const health = new OpenAPIHono().openapi(route, (c) => c.json({ app: "marklist" }, 200));

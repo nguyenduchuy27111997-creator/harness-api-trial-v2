@@ -13,3 +13,9 @@ A milestone's approved design (`docs/design/<M>.md`) takes precedence over the r
 6. **Each feature gets its own independent e2e test; never extend another feature's test.** A test signs in, resets only the data it needs, builds its own data, and asserts one feature area. Appending steps to an existing test makes it grow past the test runner's timeout on slower CI machines. Enforced by: `reviewer` subagent, `/next` protocol, and a size check on e2e tests that `/kickoff` adds for the stack.
 
 <!-- /learn appends new rules below. -->
+
+7. **Tests never reset the database.** Loop lanes share one local Postgres, so a test creates the rows it needs with values unique to it (for example suffixed with `$HARNESS_LANE` and a timestamp) and leaves other rows alone. Enforced by: `reviewer` subagent.
+
+8. **The contract is generated, committed and tested.** Every route is a `createRoute` with zod schemas for params, body and every response; `openapi.json` is regenerated (`npm run contract:update`) and committed with the change; tests call routes through `test/contract.ts`, which fails on an undocumented status or a body that does not match. Enforced by: `scripts/drift.sh` in `check.sh`, `test/contract.ts`, `reviewer` subagent.
+
+9. **Migrations keep data.** A schema change is `npm run db:generate` plus a `-- rollback:` comment in the new migration; never edit one on `main`; expand and backfill first, drop later. Destructive changes need a human decision in `docs/decisions/`. Enforced by: `scripts/migration-lint.py` and `scripts/drift.sh` in `check.sh`, the `security-reviewer` subagent.

@@ -15,7 +15,7 @@ for (const { path, method = "GET", p99 } of routes) {
   const r = await autocannon({ url: `http://127.0.0.1:${port}${path}`, method: method as autocannon.Request["method"], duration: 3, connections: 10 });
   const ok = r.latency.p99 <= p99 && r.non2xx === 0 && r.errors === 0;
   failed ||= !ok;
-  console.log(`${ok ? "ok  " : "FAIL"} ${method} ${path}: p99 ${r.latency.p99} ms (budget ${p99}), ${r.requests.average} req/s, non-2xx ${r.non2xx}, load ${loadavg()[0].toFixed(1)}`);
+  console.log(`${ok ? "ok  " : "FAIL"} ${method} ${path}: p99 ${r.latency.p99} ms (budget ${p99}), ${r.requests.average} req/s, non-2xx ${r.non2xx}, load ${(loadavg()[0] ?? 0).toFixed(1)}`);
 }
 server.close();
 process.exit(failed ? 1 : 0);

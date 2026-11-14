@@ -7,6 +7,6 @@ export const app = new OpenAPIHono();
 app.route("/", health);
 
 export const openapi = () =>
-  app.getOpenAPI31Document({ openapi: "3.1.0", info: { title: "__APP_NAME__", version: "0.1.0" } });
+  app.getOpenAPI31Document({ openapi: "3.1.0", info: { title: "marklist", version: "0.1.0" } });
 
 app.get("/openapi.json", (c) => c.json(openapi()));

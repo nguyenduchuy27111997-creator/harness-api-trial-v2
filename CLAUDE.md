@@ -3,7 +3,7 @@
 This file is a map, not a manual. Read only the docs the current task needs.
 
 ## Project
-<!-- FILL: one paragraph. What the product is, who uses it, current stage. -->
+Marklist: a private bookmarks / reading-list HTTP API (JSON, bearer tokens, per-user data) used by one developer through their own browser extension and CLI, which live outside this repo. Stage: kicked off, nothing built yet. M1: auth, bookmarks, read status, cursor pagination. M2: tags, full-text search, Postgres-backed rate limits. Stack: hono-postgres preset (TypeScript, Hono + `@hono/zod-openapi`, Drizzle, Postgres 17 in Docker), local only; the contract is the generated `openapi.json`. API details the spec leaves open: `docs/decisions/0003-api-conventions.md`.
 
 ## Commands
 - Start the app: `./init.sh`

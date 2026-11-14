@@ -1,6 +1,6 @@
 # 0001: Stack (Hono + Postgres preset)
 
-- Date: set by /kickoff
+- Date: 2026-11-14
 - Status: accepted
 
 ## Context

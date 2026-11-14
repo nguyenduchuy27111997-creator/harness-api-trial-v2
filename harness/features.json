@@ -1,17 +1,620 @@
 {
   "features": [
     {
-      "id": "F000",
+      "id": "F001",
       "milestone": "M1",
-      "priority": 0,
-      "complexity": "S",
-      "title": "Example: replace via /kickoff",
-      "acceptance": [
-        "Open the app at the root URL",
-        "See the home page render without console errors"
+      "priority": 1,
+      "title": "Sign up with email and password",
+      "complexity": "M",
+      "touches": [
+        "src/routes/auth.ts",
+        "src/lib/auth.ts",
+        "src/lib/errors.ts",
+        "src/db/schema.ts",
+        "drizzle/**",
+        "src/app.ts"
       ],
-      "status": "failing",
-      "notes": ""
+      "owner_check": true,
+      "acceptance": [
+        "POST /auth/sign-up with {\"email\": \"  Me+<ts>@Example.com \", \"password\": \"correct-horse\"}: 201, body {user: {id, email, created_at}, token}; user.email is \"me+<ts>@example.com\"; token is a base64url string of at least 43 chars",
+        "Repeat the same sign-up (any letter case): 409 with error.code \"email_taken\"",
+        "POST /auth/sign-up with email \"not-an-email\": 400, error.code \"validation_error\", error.message mentions \"email\"",
+        "POST /auth/sign-up with a 7-char password, then with a 129-char password: both 400 \"validation_error\" naming \"password\"",
+        "POST /auth/sign-up with a body that is not valid JSON: 400 \"validation_error\"",
+        "Every error body has the shape {error: {code, message}}; no response ever contains the password or a password hash",
+        "In Postgres (DATABASE_URL from .env.test, via psql): the tokens row holds a 64-char hex SHA-256 of the returned token, never the token itself; the users row holds an scrypt hash and a salt, never the password"
+      ]
+    },
+    {
+      "id": "F002",
+      "milestone": "M1",
+      "priority": 2,
+      "title": "Sign in returns a new token",
+      "complexity": "S",
+      "depends_on": [
+        "F001"
+      ],
+      "touches": [
+        "src/routes/auth.ts",
+        "src/lib/auth.ts",
+        "src/lib/errors.ts",
+        "src/db/schema.ts",
+        "drizzle/**"
+      ],
+      "acceptance": [
+        "Sign up as a fresh email, then POST /auth/sign-in with the same email (in upper case) and password: 200 {user, token}; the token differs from the sign-up token",
+        "POST /auth/sign-in with the right email and a wrong password: 401 error.code \"invalid_credentials\"",
+        "POST /auth/sign-in with an email that was never signed up: 401 with exactly the same code and message as the wrong-password case",
+        "POST /auth/sign-in without a password: 400 \"validation_error\" naming \"password\""
+      ]
+    },
+    {
+      "id": "F003",
+      "milestone": "M1",
+      "priority": 3,
+      "title": "Who am I: GET /me with a bearer token",
+      "complexity": "S",
+      "depends_on": [
+        "F001"
+      ],
+      "touches": [
+        "src/routes/auth.ts",
+        "src/lib/auth.ts",
+        "src/lib/errors.ts",
+        "src/db/schema.ts",
+        "drizzle/**",
+        "src/routes/me.ts"
+      ],
+      "acceptance": [
+        "Use a fresh email per run, e.g. `me+<timestamp>@example.com`, and send `Authorization: Bearer <token>` from sign-up",
+        "GET /me with the sign-up token: 200 {id, email, created_at} matching the sign-up user",
+        "GET /me without an Authorization header: 401 error.code \"unauthorized\"",
+        "GET /me with `Authorization: Bearer not-a-real-token`: 401 \"unauthorized\"",
+        "GET /me with a token of a second user returns that user's email, not the first one's"
+      ]
+    },
+    {
+      "id": "F004",
+      "milestone": "M1",
+      "priority": 4,
+      "title": "Sign out revokes only the token used",
+      "complexity": "S",
+      "depends_on": [
+        "F002",
+        "F003"
+      ],
+      "touches": [
+        "src/routes/auth.ts",
+        "src/lib/auth.ts",
+        "src/lib/errors.ts",
+        "src/db/schema.ts",
+        "drizzle/**"
+      ],
+      "acceptance": [
+        "Sign up (token A), then sign in with the same account (token B)",
+        "POST /auth/sign-out with token A: 204 with an empty body",
+        "GET /me with token A: 401 \"unauthorized\"; POST /auth/sign-out with token A again: 401",
+        "GET /me with token B: still 200",
+        "POST /auth/sign-out without a token: 401 \"unauthorized\""
+      ]
+    },
+    {
+      "id": "F005",
+      "milestone": "M1",
+      "priority": 5,
+      "title": "Unknown routes use the error envelope",
+      "complexity": "S",
+      "depends_on": [
+        "F001"
+      ],
+      "touches": [
+        "src/app.ts",
+        "src/lib/errors.ts"
+      ],
+      "acceptance": [
+        "GET /no-such-route: 404 with body {error: {code: \"not_found\", message}}",
+        "POST /no-such-route with a JSON body: 404 \"not_found\" with the same shape",
+        "GET /openapi.json: 200 without a token"
+      ]
+    },
+    {
+      "id": "F006",
+      "milestone": "M1",
+      "priority": 6,
+      "title": "Save a bookmark",
+      "complexity": "M",
+      "depends_on": [
+        "F003"
+      ],
+      "touches": [
+        "src/routes/bookmarks.ts",
+        "src/lib/bookmarks.ts",
+        "src/db/schema.ts",
+        "drizzle/**",
+        "src/app.ts"
+      ],
+      "owner_check": true,
+      "acceptance": [
+        "Use a fresh email per run, e.g. `me+<timestamp>@example.com`, and send `Authorization: Bearer <token>` from sign-up",
+        "POST /bookmarks {\"url\": \" https://example.com/a \"}: 201 with {id, url: \"https://example.com/a\", title: \"https://example.com/a\", note: null, read_at: null, tags: [], created_at, updated_at}",
+        "POST /bookmarks {\"url\": \"https://example.com/b\", \"title\": \"B\", \"note\": \"why\"}: 201 with that title and note",
+        "POST /bookmarks with url \"ftp://x.y\", with \"not a url\", with a relative \"/path\", and with no url: each 400 \"validation_error\" naming \"url\"",
+        "POST /bookmarks with a 2049-char url, a 501-char title, a 10,001-char note: each 400 naming the field",
+        "POST /bookmarks without a token: 401 \"unauthorized\""
+      ]
+    },
+    {
+      "id": "F007",
+      "milestone": "M1",
+      "priority": 7,
+      "title": "Duplicate url is rejected with the existing id",
+      "complexity": "S",
+      "depends_on": [
+        "F006"
+      ],
+      "touches": [
+        "src/routes/bookmarks.ts",
+        "src/lib/bookmarks.ts"
+      ],
+      "acceptance": [
+        "Use a fresh email per run, e.g. `me+<timestamp>@example.com`, and send `Authorization: Bearer <token>` from sign-up",
+        "POST /bookmarks {url: \"https://example.com/dup\"}: 201, note its id",
+        "POST /bookmarks {url: \"  https://example.com/dup  \"}: 409 error.code \"duplicate_url\" and error.existing_id equals the first id",
+        "POST /bookmarks {url: \"https://example.com/dup/\"}: 201 (different string, no normalization)",
+        "A second user saving \"https://example.com/dup\": 201 (duplicates are per user)"
+      ]
+    },
+    {
+      "id": "F008",
+      "milestone": "M1",
+      "priority": 8,
+      "title": "Get one bookmark by id",
+      "complexity": "S",
+      "depends_on": [
+        "F006"
+      ],
+      "touches": [
+        "src/routes/bookmarks.ts",
+        "src/lib/bookmarks.ts"
+      ],
+      "acceptance": [
+        "Use a fresh email per run, e.g. `me+<timestamp>@example.com`, and send `Authorization: Bearer <token>` from sign-up",
+        "Save a bookmark, then GET /bookmarks/<id>: 200 with the same bookmark",
+        "As a second user, GET /bookmarks/<first user's id>: 404 \"not_found\" (not 403)",
+        "GET /bookmarks/<random uuid> and GET /bookmarks/not-a-uuid: both 404 \"not_found\"",
+        "GET /bookmarks/<id> without a token: 401"
+      ]
+    },
+    {
+      "id": "F009",
+      "milestone": "M1",
+      "priority": 9,
+      "title": "List my bookmarks with cursor pagination",
+      "complexity": "M",
+      "depends_on": [
+        "F006"
+      ],
+      "touches": [
+        "src/routes/bookmarks.ts",
+        "src/lib/bookmarks.ts",
+        "src/lib/pagination.ts"
+      ],
+      "acceptance": [
+        "Use a fresh email per run, e.g. `me+<timestamp>@example.com`, and send `Authorization: Bearer <token>` from sign-up",
+        "As a fresh user with no bookmarks, GET /bookmarks: 200 {items: [], next_cursor: null}",
+        "Save three bookmarks A, B, C in that order; GET /bookmarks?limit=2: items [C, B] and a non-null next_cursor",
+        "GET /bookmarks?limit=2&cursor=<next_cursor>: items [A], next_cursor null",
+        "GET /bookmarks: all three, newest first (default limit 20); a second user's bookmarks never appear",
+        "GET /bookmarks?limit=0 and ?limit=101 and ?limit=abc: 400 \"validation_error\" naming \"limit\"",
+        "GET /bookmarks?cursor=garbage and with a next_cursor whose characters were changed: 400 \"invalid_cursor\""
+      ]
+    },
+    {
+      "id": "F010",
+      "milestone": "M1",
+      "priority": 10,
+      "title": "Edit a bookmark's title and note",
+      "complexity": "S",
+      "depends_on": [
+        "F008"
+      ],
+      "touches": [
+        "src/routes/bookmarks.ts",
+        "src/lib/bookmarks.ts"
+      ],
+      "acceptance": [
+        "Use a fresh email per run, e.g. `me+<timestamp>@example.com`, and send `Authorization: Bearer <token>` from sign-up",
+        "Save a bookmark with a note; PATCH /bookmarks/<id> {\"title\": \"New\"}: 200, title \"New\", note unchanged, updated_at later than before",
+        "PATCH /bookmarks/<id> {\"note\": null}: 200 with note null",
+        "PATCH /bookmarks/<id> {\"title\": \"\"}: 400 \"validation_error\" naming \"title\"",
+        "PATCH /bookmarks/<id> {\"url\": \"https://other.example\"}: the url stays the original",
+        "PATCH another user's bookmark id: 404 \"not_found\"; without a token: 401"
+      ]
+    },
+    {
+      "id": "F011",
+      "milestone": "M1",
+      "priority": 11,
+      "title": "Delete a bookmark",
+      "complexity": "S",
+      "depends_on": [
+        "F008"
+      ],
+      "touches": [
+        "src/routes/bookmarks.ts",
+        "src/lib/bookmarks.ts"
+      ],
+      "acceptance": [
+        "Use a fresh email per run, e.g. `me+<timestamp>@example.com`, and send `Authorization: Bearer <token>` from sign-up",
+        "Save a bookmark; DELETE /bookmarks/<id>: 204; then GET /bookmarks/<id>: 404",
+        "DELETE the same id again: 404 \"not_found\"",
+        "DELETE another user's bookmark id: 404, and that bookmark still exists for its owner",
+        "The url can be saved again after deletion: POST it again gives 201"
+      ]
+    },
+    {
+      "id": "F012",
+      "milestone": "M1",
+      "priority": 12,
+      "title": "Mark a bookmark read",
+      "complexity": "S",
+      "depends_on": [
+        "F008"
+      ],
+      "touches": [
+        "src/routes/bookmarks.ts",
+        "src/lib/bookmarks.ts"
+      ],
+      "acceptance": [
+        "Use a fresh email per run, e.g. `me+<timestamp>@example.com`, and send `Authorization: Bearer <token>` from sign-up",
+        "Save a bookmark; PUT /bookmarks/<id>/read: 200 with read_at set to a timestamp",
+        "PUT /bookmarks/<id>/read again: 200 with the same read_at as the first time",
+        "PUT /bookmarks/<another user's id>/read: 404; without a token: 401"
+      ]
+    },
+    {
+      "id": "F013",
+      "milestone": "M1",
+      "priority": 13,
+      "title": "Mark a bookmark unread",
+      "complexity": "S",
+      "depends_on": [
+        "F012"
+      ],
+      "touches": [
+        "src/routes/bookmarks.ts",
+        "src/lib/bookmarks.ts"
+      ],
+      "acceptance": [
+        "Use a fresh email per run, e.g. `me+<timestamp>@example.com`, and send `Authorization: Bearer <token>` from sign-up",
+        "Save and mark read a bookmark; DELETE /bookmarks/<id>/read: 200 with read_at null",
+        "DELETE /bookmarks/<id>/read on an unread bookmark: 200 with read_at null",
+        "DELETE /bookmarks/<another user's id>/read: 404; without a token: 401"
+      ]
+    },
+    {
+      "id": "F014",
+      "milestone": "M1",
+      "priority": 14,
+      "title": "Filter bookmarks by read status",
+      "complexity": "S",
+      "depends_on": [
+        "F009",
+        "F012"
+      ],
+      "touches": [
+        "src/routes/bookmarks.ts",
+        "src/lib/bookmarks.ts",
+        "src/lib/pagination.ts"
+      ],
+      "acceptance": [
+        "Use a fresh email per run, e.g. `me+<timestamp>@example.com`, and send `Authorization: Bearer <token>` from sign-up",
+        "Save three bookmarks and mark the middle one read",
+        "GET /bookmarks?status=read: only the read one; GET /bookmarks?status=unread: the other two, newest first",
+        "GET /bookmarks?status=unread&limit=1: one item and a next_cursor; following it returns the other unread one and next_cursor null",
+        "GET /bookmarks?status=done: 400 \"validation_error\" naming \"status\""
+      ]
+    },
+    {
+      "id": "F015",
+      "milestone": "M1",
+      "priority": 15,
+      "title": "Contract documents every route, status and error body",
+      "type": "chore",
+      "complexity": "S",
+      "depends_on": [
+        "F004",
+        "F005",
+        "F007",
+        "F010",
+        "F011",
+        "F013",
+        "F014"
+      ],
+      "touches": [
+        "test/contract-coverage.test.ts",
+        "src/lib/errors.ts"
+      ],
+      "acceptance": [
+        "GET /openapi.json: every M1 route is listed",
+        "Every protected route documents 401, every route with an :id documents 404, every route with a body or query documents 400, all with the {error: {code, message}} schema",
+        "POST /bookmarks documents 409 with existing_id; POST /auth/sign-up documents 409",
+        "A test fails when a route is added without these error responses"
+      ]
+    },
+    {
+      "id": "F016",
+      "milestone": "M1",
+      "priority": 16,
+      "title": "Latency budget for listing bookmarks with 1,000 bookmarks",
+      "type": "chore",
+      "complexity": "S",
+      "depends_on": [
+        "F014"
+      ],
+      "touches": [
+        "scripts/perf.ts",
+        "perf.config.json"
+      ],
+      "acceptance": [
+        "`npm run perf` seeds a user with 1,000 bookmarks (some read) and loads GET /bookmarks, GET /bookmarks?limit=100, GET /bookmarks?status=read and a cursor page with that user's token",
+        "Each has p99 under 150 ms locally and the run fails when one goes over"
+      ]
+    },
+    {
+      "id": "F101",
+      "milestone": "M2",
+      "priority": 17,
+      "title": "Tag a bookmark",
+      "complexity": "M",
+      "depends_on": [
+        "F008"
+      ],
+      "touches": [
+        "src/routes/tags.ts",
+        "src/lib/tags.ts",
+        "src/routes/bookmarks.ts",
+        "src/lib/bookmarks.ts",
+        "src/db/schema.ts",
+        "drizzle/**",
+        "src/app.ts"
+      ],
+      "owner_check": true,
+      "acceptance": [
+        "Use a fresh email per run, e.g. `me+<timestamp>@example.com`, and send `Authorization: Bearer <token>` from sign-up",
+        "Save a bookmark; PUT /bookmarks/<id>/tags/Reading: 200 with tags [\"reading\"]",
+        "PUT the same tag again: 200, tags still [\"reading\"] (idempotent)",
+        "PUT /bookmarks/<id>/tags/bad_tag and a 33-char tag: 400 \"validation_error\" naming \"tag\"",
+        "Add 10 different tags, then an 11th: 400 \"too_many_tags\"; re-adding one of the 10 is still 200",
+        "GET /bookmarks/<id> shows the tags sorted by name; another user's id gives 404; no token gives 401"
+      ]
+    },
+    {
+      "id": "F102",
+      "milestone": "M2",
+      "priority": 18,
+      "title": "Remove a tag from a bookmark",
+      "complexity": "S",
+      "depends_on": [
+        "F101"
+      ],
+      "touches": [
+        "src/routes/tags.ts",
+        "src/lib/tags.ts"
+      ],
+      "acceptance": [
+        "Use a fresh email per run, e.g. `me+<timestamp>@example.com`, and send `Authorization: Bearer <token>` from sign-up",
+        "Tag a bookmark \"a\" and \"b\"; DELETE /bookmarks/<id>/tags/a: 200 with tags [\"b\"]",
+        "DELETE /bookmarks/<id>/tags/a again: 200, tags [\"b\"] (idempotent)",
+        "DELETE on another user's bookmark: 404; without a token: 401"
+      ]
+    },
+    {
+      "id": "F103",
+      "milestone": "M2",
+      "priority": 19,
+      "title": "List my tags with counts",
+      "complexity": "S",
+      "depends_on": [
+        "F102"
+      ],
+      "touches": [
+        "src/routes/tags.ts",
+        "src/lib/tags.ts"
+      ],
+      "acceptance": [
+        "Use a fresh email per run, e.g. `me+<timestamp>@example.com`, and send `Authorization: Bearer <token>` from sign-up",
+        "As a fresh user, GET /tags: 200 {items: []}",
+        "Tag two bookmarks \"read-later\" and one of them also \"go\"; GET /tags: {items: [{name: \"go\", count: 1}, {name: \"read-later\", count: 2}]}",
+        "Remove \"go\" from its bookmark; GET /tags no longer lists \"go\"",
+        "A second user's tags never appear; without a token: 401"
+      ]
+    },
+    {
+      "id": "F104",
+      "milestone": "M2",
+      "priority": 20,
+      "title": "Rename a tag, merging into an existing one",
+      "complexity": "M",
+      "depends_on": [
+        "F103"
+      ],
+      "touches": [
+        "src/routes/tags.ts",
+        "src/lib/tags.ts"
+      ],
+      "acceptance": [
+        "Use a fresh email per run, e.g. `me+<timestamp>@example.com`, and send `Authorization: Bearer <token>` from sign-up",
+        "Tag bookmark 1 \"js\"; PATCH /tags/js {\"name\": \"JavaScript\"}: 200 {name: \"javascript\", count: 1}; bookmark 1 now has \"javascript\"",
+        "Tag bookmark 2 \"ts\" and \"web\", bookmark 3 \"web\"; PATCH /tags/ts {\"name\": \"web\"}: 200 {name: \"web\", count: 2}; bookmark 2 has \"web\" once and no \"ts\"",
+        "A bookmark with 10 tags renamed into one it already has keeps 9 tags (no 400)",
+        "PATCH /tags/unknown {\"name\": \"x\"}: 404 \"not_found\"; PATCH with an invalid new name: 400 naming \"name\"",
+        "Renaming never changes a second user's tags; without a token: 401"
+      ]
+    },
+    {
+      "id": "F105",
+      "milestone": "M2",
+      "priority": 21,
+      "title": "Filter bookmarks by tag",
+      "complexity": "S",
+      "depends_on": [
+        "F101",
+        "F014"
+      ],
+      "touches": [
+        "src/routes/bookmarks.ts",
+        "src/lib/bookmarks.ts",
+        "src/lib/pagination.ts"
+      ],
+      "acceptance": [
+        "Use a fresh email per run, e.g. `me+<timestamp>@example.com`, and send `Authorization: Bearer <token>` from sign-up",
+        "Save three bookmarks, tag two \"go\", mark one of those read",
+        "GET /bookmarks?tag=go: the two, newest first; GET /bookmarks?tag=Go gives the same",
+        "GET /bookmarks?tag=go&status=unread: only the unread one",
+        "GET /bookmarks?tag=go&limit=1 then follow next_cursor: the second one, then next_cursor null",
+        "GET /bookmarks?tag=nope: {items: [], next_cursor: null}; ?tag=bad_tag: 400 naming \"tag\""
+      ]
+    },
+    {
+      "id": "F106",
+      "milestone": "M2",
+      "priority": 22,
+      "title": "Search bookmarks by text",
+      "complexity": "M",
+      "depends_on": [
+        "F105"
+      ],
+      "touches": [
+        "src/routes/bookmarks.ts",
+        "src/lib/bookmarks.ts",
+        "src/db/schema.ts",
+        "drizzle/**"
+      ],
+      "acceptance": [
+        "Use a fresh email per run, e.g. `me+<timestamp>@example.com`, and send `Authorization: Bearer <token>` from sign-up",
+        "Save A {title: \"Rust book\"}, B {url: \"https://go.dev/doc\"}, C {note: \"zebra migration notes\"}",
+        "GET /bookmarks?q=zebra: only C; ?q=rust: only A; ?q=go.dev: B",
+        "Tag C \"x\" and mark it read; ?q=zebra&tag=x&status=read: C; ?q=zebra&status=unread: empty",
+        "?q=notes&limit=1 with two matching bookmarks: newest first, and next_cursor reaches the second",
+        "?q= (empty): same as no q; another user's matching bookmarks never appear"
+      ]
+    },
+    {
+      "id": "F107",
+      "milestone": "M2",
+      "priority": 23,
+      "title": "Write rate limit per token",
+      "complexity": "M",
+      "depends_on": [
+        "F006",
+        "F002"
+      ],
+      "touches": [
+        "src/lib/rate-limit.ts",
+        "src/db/schema.ts",
+        "drizzle/**",
+        "src/lib/auth.ts",
+        "src/app.ts"
+      ],
+      "acceptance": [
+        "Use a fresh email per run, e.g. `me+<timestamp>@example.com`, and send `Authorization: Bearer <token>` from sign-up",
+        "Send 60 POST /bookmarks within one minute with one token: all 201 or 409",
+        "The 61st write (POST, PUT, PATCH or DELETE) in the same minute: 429 error.code \"rate_limited\" with a Retry-After header of 1 to 60 seconds",
+        "Another token of the same user (from sign-in) can still write in that minute",
+        "After waiting Retry-After seconds, the first token can write again",
+        "GET /bookmarks with the limited token still works (reads count separately)"
+      ]
+    },
+    {
+      "id": "F108",
+      "milestone": "M2",
+      "priority": 24,
+      "title": "Read rate limit per token",
+      "complexity": "S",
+      "depends_on": [
+        "F107"
+      ],
+      "touches": [
+        "src/lib/rate-limit.ts",
+        "src/db/schema.ts",
+        "drizzle/**"
+      ],
+      "acceptance": [
+        "Use a fresh email per run, e.g. `me+<timestamp>@example.com`, and send `Authorization: Bearer <token>` from sign-up",
+        "Send 300 GET /bookmarks within one minute with one token: all 200",
+        "The 301st GET in the same minute: 429 \"rate_limited\" with Retry-After",
+        "GET /openapi.json is never limited"
+      ]
+    },
+    {
+      "id": "F109",
+      "milestone": "M2",
+      "priority": 25,
+      "title": "Sign-in attempt limit per email",
+      "complexity": "S",
+      "depends_on": [
+        "F107"
+      ],
+      "touches": [
+        "src/lib/rate-limit.ts",
+        "src/db/schema.ts",
+        "drizzle/**",
+        "src/routes/auth.ts",
+        "src/lib/auth.ts",
+        "src/lib/errors.ts",
+        "src/db/schema.ts",
+        "drizzle/**"
+      ],
+      "acceptance": [
+        "Sign up a fresh email; make 10 POST /auth/sign-in attempts within 15 minutes (mix of right and wrong passwords): each 200 or 401",
+        "The 11th attempt, even with the right password and the email in different case: 429 \"rate_limited\" with a Retry-After header",
+        "Sign-in for a different email still works; POST /auth/sign-up is never limited"
+      ]
+    },
+    {
+      "id": "F110",
+      "milestone": "M2",
+      "priority": 26,
+      "title": "Latency budget for tag filter, search and tag list",
+      "type": "chore",
+      "complexity": "S",
+      "depends_on": [
+        "F016",
+        "F103",
+        "F106",
+        "F108"
+      ],
+      "touches": [
+        "scripts/perf.ts",
+        "perf.config.json"
+      ],
+      "acceptance": [
+        "`npm run perf` also loads GET /bookmarks?tag=<tag>, GET /bookmarks?q=<word>, GET /bookmarks?q=<word>&tag=<tag>&status=unread and GET /tags for a user with 1,000 tagged bookmarks",
+        "Each has p99 under 150 ms locally and the run fails when one goes over"
+      ]
+    },
+    {
+      "id": "F111",
+      "milestone": "M2",
+      "priority": 27,
+      "title": "Contract covers tags, search and rate limits",
+      "type": "chore",
+      "complexity": "S",
+      "depends_on": [
+        "F015",
+        "F104",
+        "F106",
+        "F109"
+      ],
+      "touches": [
+        "test/contract-coverage.test.ts"
+      ],
+      "acceptance": [
+        "GET /openapi.json lists every M2 route with its 400, 401 and 404 errors",
+        "Every rate-limited route documents 429 with the Retry-After header; GET /bookmarks documents the tag, status and q query params",
+        "The contract coverage test from F015 passes for all routes"
+      ]
     }
   ]
 }

@@ -9,7 +9,7 @@ export default defineConfig({
     env: process.env.DATABASE_URL ? {} : loadEnvTest(),
     // In the loop, a json summary too: harness/quality.py reads it for the office ($HARNESS_QUALITY).
     coverage: { include: ["src/**"], exclude: ["src/server.ts"], thresholds: { lines: 80, functions: 80, branches: 70 },
-                reporter: process.env.HARNESS_QUALITY ? ["text", "json-summary"] : undefined },
+                ...(process.env.HARNESS_QUALITY ? { reporter: ["text", "json-summary"] } : {}) },
   },
 });
 
