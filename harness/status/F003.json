@@ -1,0 +1,4 @@
+{
+  "status": "passing",
+  "notes": "GET /me with requireAuth middleware (lib/auth.ts), bearerAuth scheme registered in app.ts. Unknown routes still return plain-text 404 (F005 scope)."
+}

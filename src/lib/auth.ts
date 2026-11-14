@@ -1,8 +1,10 @@
 import { createHash, randomBytes, scrypt, timingSafeEqual } from "node:crypto";
 import { promisify } from "node:util";
-import { eq } from "drizzle-orm";
+import { and, eq, isNull } from "drizzle-orm";
+import type { MiddlewareHandler } from "hono";
 import { db } from "../db/client.js";
 import { tokens, users } from "../db/schema.js";
+import { apiError } from "./errors.js";
 
 const scryptAsync = promisify(scrypt) as (pw: string, salt: Buffer, keylen: number) => Promise<Buffer>;
 
@@ -56,4 +58,24 @@ export async function signIn(email: string, password: string) {
   const ok = timingSafeEqual(key, Buffer.from(stored.passwordHash, "hex"));
   if (!row || !ok) return null;
   return { user: toUser(row), token: await issueToken(row.id) };
+}
+
+// Route middleware for protected routes: valid, unrevoked bearer token → sets userId and tokenId.
+export const requireAuth: MiddlewareHandler<{ Variables: { userId: string; tokenId: string } }> = async (c, next) => {
+  const m = /^Bearer (\S+)$/i.exec(c.req.header("authorization") ?? "");
+  const [row] = m
+    ? await db
+        .select({ id: tokens.id, userId: tokens.userId })
+        .from(tokens)
+        .where(and(eq(tokens.tokenHash, hashToken(m[1]!)), isNull(tokens.revokedAt)))
+    : [];
+  if (!row) return apiError(c, 401, "unauthorized", "Missing or invalid bearer token");
+  c.set("userId", row.userId);
+  c.set("tokenId", row.id);
+  await next();
+};
+
+export async function getUser(userId: string) {
+  const [row] = await db.select().from(users).where(eq(users.id, userId));
+  return row ? toUser(row) : null;
 }
