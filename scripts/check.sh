@@ -4,6 +4,8 @@
 # schema drift, contract drift, API tests with coverage, backlog. The latency budget
 # runs in CI (npm run perf). Exits non-zero on any failure.
 set -euo pipefail
+# set -e stops without a word; name the step, so a failure under load is not silent.
+trap 'echo "check.sh: failed (exit $?) at line $LINENO: $BASH_COMMAND" >&2' ERR
 cd "$(dirname "$0")/.."
 
 # Reinstall when the lockfile is newer than the installed tree (fresh worktrees have none).

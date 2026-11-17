@@ -11,6 +11,16 @@ if command -v uvx >/dev/null; then run=(uvx "semgrep@$SEMGREP")
 elif command -v pipx >/dev/null; then run=(pipx run "semgrep==$SEMGREP")
 else echo "sast: install uv (brew install uv) to run Semgrep" >&2; exit 1; fi
 # --no-git-ignore: also scan files not committed yet (a session runs check.sh before it commits).
-# shellcheck disable=SC2086
-"${run[@]}" scan --metrics=off --error --quiet --no-git-ignore \
-  --config p/default --config p/owasp-top-ten --config p/nodejs $dirs
+# Exit 1 is a finding. Any other failure (registry fetch, a crash under load) is said, and tried once more.
+scan() {
+  # shellcheck disable=SC2086
+  "${run[@]}" scan --metrics=off --error --quiet --no-git-ignore \
+    --config p/default --config p/owasp-top-ten --config p/nodejs $dirs
+}
+code=0; scan || code=$?
+if [ "$code" -gt 1 ]; then
+  echo "sast: Semgrep failed (exit $code) without a finding; trying once more" >&2
+  code=0; scan || code=$?
+fi
+[ "$code" -eq 0 ] || echo "sast: Semgrep exit $code$([ "$code" -eq 1 ] && echo ': findings above')" >&2
+exit "$code"
